@@ -36,9 +36,14 @@ impl Vector3 {
         Vector3 {x, y, z}
     }
 
-    /// Returns the $L^2$ norm (length squared)
+    /// Returns the $L^2$ norm
     pub fn norm(&self) -> f64 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
+    /// Returns length squared
+    pub fn length_squared(&self) -> f64 {
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     /// Returns a unit vector

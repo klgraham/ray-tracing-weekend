@@ -5,9 +5,13 @@ use std::io::{Write};
 mod color;
 mod geom;
 mod ray;
+mod shapes;
+
 use color::{Color, Colors};
 use ray::Ray;
 use geom::{Point3, Vector3};
+use shapes::{Hittable};
+use shapes::sphere::Sphere;
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will 
 /// basically be an xy-plane, where the origin is in the lower left corner, 
@@ -15,29 +19,39 @@ use geom::{Point3, Vector3};
 /// out of the screen. The endpoint of the ray on the screen (in the xy-plane) 
 /// can be denoted with two offset vectors `u` and `v`.
 
-/// Returns true if the `ray` hits the sphere at `center` of radius `radius`
-fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> bool {
-    let a = ray.direction.dot(ray.direction);
-    // origin - center
-    let oc = ray.origin - center;
-    let b = 2.0 * ray.direction.dot(oc);
-    let c = oc.dot(oc) - radius * radius;
-    let discriminant = b*b - 4.0*a*c;
-    discriminant > 0.0
-}
+/// Returns the smallest `t` at which the `ray` intersects the sphere
+// fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> f64 {
+//     // origin - center
+//     let oc = ray.origin - center;
+//     let a = ray.direction.length_squared();
+//     let half_b = ray.direction.dot(oc);
+//     let c = oc.length_squared() - radius * radius;
+//     let discriminant = half_b * half_b - a*c;
+//     if discriminant < 0.0 {
+//         return -1.0;
+//     } else {
+//         return -(half_b + discriminant.sqrt()) / a;
+//     }
+// }
 
 fn color_ray(r: Ray) -> Color {
-    let sphere_intersects = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
-    if sphere_intersects {
-        return Colors::Red.value();
-    }
+    let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+    let intersection = sphere.hit(&r, 0.0, 1.0);
 
-    let ray_direction = r.direction.to_unit_vector();
-    // y is [-1,1], so t is [0,1]
-    let t = 0.5 * (ray_direction.y + 1.0);
-    // linear interpolation between while and blue, based on y-component of ray
-    // blendedValue = (1−t)*startValue + t * endValue
-    return (1.0-t) * Colors::White.value() + t * Colors::Blue.value();
+    match intersection {
+        Some(intersect) => {
+            let n = intersect.normal;
+            return 0.5 * Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0);
+        },
+        None => {
+            let ray_direction = r.direction.to_unit_vector();
+            // y is [-1,1], so t is [0,1]
+            let t = 0.5 * (ray_direction.y + 1.0);
+            // linear interpolation between while and a light blue, based on y-component of ray
+            // blendedValue = (1−t)*startValue + t * endValue
+            return (1.0-t) * Colors::White.value() + t * Color::new(0.5, 0.7, 1.0);
+        }
+    }
 }
 
 fn main() {
