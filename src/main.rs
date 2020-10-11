@@ -15,7 +15,23 @@ use geom::{Point3, Vector3};
 /// out of the screen. The endpoint of the ray on the screen (in the xy-plane) 
 /// can be denoted with two offset vectors `u` and `v`.
 
+/// Returns true if the `ray` hits the sphere at `center` of radius `radius`
+fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> bool {
+    let a = ray.direction.dot(ray.direction);
+    // origin - center
+    let oc = ray.origin - center;
+    let b = 2.0 * ray.direction.dot(oc);
+    let c = oc.dot(oc) - radius * radius;
+    let discriminant = b*b - 4.0*a*c;
+    discriminant > 0.0
+}
+
 fn color_ray(r: Ray) -> Color {
+    let sphere_intersects = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
+    if sphere_intersects {
+        return Colors::Red.value();
+    }
+
     let ray_direction = r.direction.to_unit_vector();
     // y is [-1,1], so t is [0,1]
     let t = 0.5 * (ray_direction.y + 1.0);
