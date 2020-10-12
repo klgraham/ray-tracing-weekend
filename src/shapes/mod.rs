@@ -18,5 +18,6 @@ impl Intersection {
 }
 
 pub trait Hittable {
+    /// Returns the interesction between a ray a shape, if there is one
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
 }

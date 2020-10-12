@@ -19,21 +19,6 @@ use shapes::sphere::Sphere;
 /// out of the screen. The endpoint of the ray on the screen (in the xy-plane) 
 /// can be denoted with two offset vectors `u` and `v`.
 
-/// Returns the smallest `t` at which the `ray` intersects the sphere
-// fn hit_sphere(center: Point3, radius: f64, ray: Ray) -> f64 {
-//     // origin - center
-//     let oc = ray.origin - center;
-//     let a = ray.direction.length_squared();
-//     let half_b = ray.direction.dot(oc);
-//     let c = oc.length_squared() - radius * radius;
-//     let discriminant = half_b * half_b - a*c;
-//     if discriminant < 0.0 {
-//         return -1.0;
-//     } else {
-//         return -(half_b + discriminant.sqrt()) / a;
-//     }
-// }
-
 fn color_ray(r: Ray) -> Color {
     let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
     let intersection = sphere.hit(&r, 0.0, 1.0);
