@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use std::ops::{Add, Sub, Mul};
+use std::ops::{Add, Sub, Mul, AddAssign};
 
 
 // color.rs
@@ -22,14 +22,27 @@ impl Color {
     pub fn new(red: f64, green: f64, blue: f64) -> Self {
         Color {red, green, blue}
     }
-
+    
     pub fn to_pixel(&self) -> (u8, u8, u8) {
         (clamp_pixel(self.red),
          clamp_pixel(self.green),
          clamp_pixel(self.blue))
     }
+
+    pub fn sample_pixel(&self, samples_per_pixel: u32) -> (u8, u8, u8) {        
+        // divide the color by the number of samples
+        let scale = 1.0 / (samples_per_pixel as f64);
+        let r = self.red * scale;
+        let g = self.green * scale;
+        let b = self.blue * scale;
+
+        (clamp_pixel(r),
+         clamp_pixel(g),
+         clamp_pixel(b))
+    }
 }
 
+/// Clamps a color component to [0, 255]
 fn clamp_pixel(c: f64) -> u8 {
     if c > 1.0f64 {
         return 255u8
@@ -37,6 +50,16 @@ fn clamp_pixel(c: f64) -> u8 {
         return 0u8
     } else {
         return (255.0 * c).round() as u8
+    }
+}
+
+fn clamp_pixel2(x: f64, x_min: f64, x_max: f64) -> f64 {
+    if x < x_min {
+        return x_min;        
+    } else if x > x_max {
+        return x_max;
+    } else {
+        return x;
     }
 }
 
@@ -58,6 +81,15 @@ impl Add for Color {
 
     fn add(self, other: Color) -> Color {
         Color::new(self.red + other.red, self.green + other.green, self.blue + other.blue)
+    }
+}
+
+/// Color addition, with assignment
+impl AddAssign<Color> for Color {
+    fn add_assign(&mut self, other: Color) {
+        self.red += other.red;
+        self.green += other.green;
+        self.blue += other.blue;
     }
 }
 

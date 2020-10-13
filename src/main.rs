@@ -1,15 +1,19 @@
 use std::fs::{File};
 use std::path::Path;
 use std::io::{Write};
+use rand::prelude::*;
+
 
 mod color;
 mod geom;
 mod ray;
 mod shapes;
+mod camera;
 
 use color::{Color, Colors};
 use ray::Ray;
 use geom::{Point3, Vector3};
+use camera::Camera;
 use shapes::{Hittable, HittableObjects};
 use shapes::sphere::Sphere;
 
@@ -44,6 +48,7 @@ fn main() {
     let aspect_ratio: f64 = 16.0 / 9.0;
     let width: usize = 400;
     let height: usize = (width as f64 / aspect_ratio) as usize;
+    let samples_per_pixel: u32 = 100;
 
     // World
     let mut world: HittableObjects<Sphere> = HittableObjects::new();
@@ -53,21 +58,9 @@ fn main() {
     world.add(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5));
 
     // Camera
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let focal_length = 1.0;
-
-    let origin = Point3::origin();
-    let horizontal = Vector3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vector3::new(0.0, viewport_height, 0.0);
-    // the eye is at the center of the screen, at z = focal_length
-    // This position is relative to the center of the screen. So, to get to the 
-    // eye from the center, you go left and down by one half and then move 
-    // towards the eye by focal length. 
-    let lower_left_corner = -0.5 * horizontal - 0.5 * vertical - Vector3::new(0.0, 0.0, focal_length);
-
-    // Render
+    let camera = Camera::new(aspect_ratio, 2.0, 1.0);
     
+    // Render    
     // Render a PPM file in P6 format, P6 format is a little simpler than P3 format
     let path = Path::new("./test_file.ppm");
     let mut file = File::create(path).expect("Failed to create file.");
@@ -78,16 +71,23 @@ fn main() {
     let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
     let w = (width as f64) - 1.0;
     let h = (height as f64) - 1.0;
+    let mut rng = rand::thread_rng();
 
     // Note that the height coordinate is written backwards
     for j in (0..height).rev() {
         println!("\rScanlines remaining: {}", j);
         for i in 0..width {
-            let u = (i as f64) / w;
-            let v = (j as f64) / h;
-            let direction = lower_left_corner + u * horizontal + v * vertical;
-            let r = Ray::new(origin, direction);
-            let pixel = color_ray(r, &world).to_pixel();
+            let mut color = Colors::Black.value();
+
+            for _ in 0..samples_per_pixel {
+                let x: f64 = rng.gen();
+                let u = ((i as f64) + x) / w;
+                let y: f64 = rng.gen();
+                let v = ((j as f64) + y) / h;
+                let r = camera.get_ray(u, v);
+                color += color_ray(r, &world);
+            }
+            let pixel = color.sample_pixel(samples_per_pixel);
             binary_pixels.push(pixel.0);
             binary_pixels.push(pixel.1);
             binary_pixels.push(pixel.2);
