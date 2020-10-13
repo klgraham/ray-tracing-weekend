@@ -12,10 +12,10 @@ mod camera;
 
 use color::{Color, Colors};
 use ray::Ray;
-use geom::{Point3, Vector3};
+use geom::*;
 use camera::Camera;
 use shapes::{Hittable, HittableObjects};
-use shapes::sphere::Sphere;
+use shapes::sphere::{Sphere};
 
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will 
@@ -24,13 +24,24 @@ use shapes::sphere::Sphere;
 /// out of the screen. The endpoint of the ray on the screen (in the xy-plane) 
 /// can be denoted with two offset vectors `u` and `v`.
 
-fn color_ray<T: Hittable>(r: Ray, world: &HittableObjects<T>) -> Color {    
-    let intersection = world.hit(&r, 0.0, f64::MAX);
+fn compute_ray_color<T: Hittable>(r: Ray, world: &HittableObjects<T>, depth: i32) -> Color {    
+    if depth <= 0 {
+        // This gives us an end to the recursion.
+        return Colors::Black.value();
+    }
+
+    let intersection = world.hit(&r, 1e-3, f64::MAX);
 
     match intersection {
         Some(intersect) => {
+            // Each time a ray hits something, we a create a ray with random direction. 
+            // This simulates the random reflection and absorption that 
+            // happens when light hits a diffuse material.
+            let target = intersect.p + random_in_hemisphere(&intersect.normal);
+            // let target = intersect.p + intersect.normal + random_unit_vector();
             let n = intersect.normal;
-            return 0.5 * Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0);
+            let ray = Ray::new(intersect.p, target - intersect.p);
+            return 0.5 * compute_ray_color(ray, world, depth - 1);
         },
         None => {
             let ray_direction = r.direction.to_unit_vector();
@@ -49,6 +60,7 @@ fn main() {
     let width: usize = 400;
     let height: usize = (width as f64 / aspect_ratio) as usize;
     let samples_per_pixel: u32 = 100;
+    let max_depth: i32 = 50;
 
     // World
     let mut world: HittableObjects<Sphere> = HittableObjects::new();
@@ -85,7 +97,7 @@ fn main() {
                 let y: f64 = rng.gen();
                 let v = ((j as f64) + y) / h;
                 let r = camera.get_ray(u, v);
-                color += color_ray(r, &world);
+                color += compute_ray_color(r, &world, max_depth);
             }
             let pixel = color.sample_pixel(samples_per_pixel);
             binary_pixels.push(pixel.0);

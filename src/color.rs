@@ -36,9 +36,9 @@ impl Color {
         let g = self.green * scale;
         let b = self.blue * scale;
 
-        (clamp_pixel(r),
-         clamp_pixel(g),
-         clamp_pixel(b))
+        (clamp_pixel(r.sqrt()),
+         clamp_pixel(g.sqrt()),
+         clamp_pixel(b.sqrt()))
     }
 }
 

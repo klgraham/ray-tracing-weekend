@@ -1,6 +1,8 @@
 use crate::{Point3, Vector3};
 use crate::shapes::{Hittable, Intersection};
 use crate::ray::Ray;
+use rand::prelude::*;
+
 
 /// sphere of radius `radius`, with center at `center` 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,3 +55,4 @@ impl Hittable for Sphere {
         None
     }
 }
+

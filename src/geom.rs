@@ -1,6 +1,6 @@
 use std::cmp::PartialEq;
 use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign};
-
+use rand::prelude::*;
 
 // geom.rs
 
@@ -68,6 +68,42 @@ impl Vector3 {
             self.z * &x - self.x * &z,
             self.x * &y - self.y * &x
         )
+    }
+
+}
+
+
+/// Returns a random point inside the unit sphere
+pub fn random_point_in_unit_sphere() -> Vector3 {
+    let mut rng = rand::thread_rng();
+    loop {
+        let x: f64 = rng.gen();
+        let y: f64 = rng.gen();
+        let z: f64 = rng.gen();
+        let v = Vector3::new(x, y, z);
+
+        if v.length_squared() >= 1.0 {
+            continue;
+        }
+        return v
+    }
+}
+
+pub fn random_unit_vector() -> Vector3 {
+    let mut rng = rand::thread_rng();
+    let phi:f64 = rng.gen_range(0.0, 2.0 * std::f64::consts::PI);
+    let z:f64 = rng.gen_range(-1.0, 1.0);
+    let r = (1.0 - z * z).sqrt();
+    Vector3::new(r * phi.cos(), r * phi.sin(), z)
+}
+
+pub fn random_in_hemisphere(normal: &Vector3) -> Vector3 {
+    let in_unit_sphere = random_point_in_unit_sphere();
+    if normal.dot(in_unit_sphere) > 0.0 {
+        // random vector in same hemisphere as normal
+        return in_unit_sphere;
+    } else {
+        return -in_unit_sphere;
     }
 }
 
