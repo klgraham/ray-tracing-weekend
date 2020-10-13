@@ -36,7 +36,7 @@ impl Hittable for Sphere {
                 // point where ray hits sphere
                 let p = r.at(t);
                 let normal: Vector3 = (p - self.center) / self.radius;
-                let intersection = Intersection::new(t, p, normal);
+                let intersection = Intersection::new(&r, t, p, normal);
                 return Some(intersection);
             }
 
@@ -45,7 +45,7 @@ impl Hittable for Sphere {
                 // point where ray hits sphere
                 let p = r.at(t);
                 let normal: Vector3 = (p - self.center) / self.radius;
-                let intersection = Intersection::new(t, p, normal);
+                let intersection = Intersection::new(&r, t, p, normal);
                 return Some(intersection);
             }
         }

@@ -10,8 +10,9 @@ mod shapes;
 use color::{Color, Colors};
 use ray::Ray;
 use geom::{Point3, Vector3};
-use shapes::{Hittable};
+use shapes::{Hittable, HittableObjects};
 use shapes::sphere::Sphere;
+
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will 
 /// basically be an xy-plane, where the origin is in the lower left corner, 
@@ -19,9 +20,8 @@ use shapes::sphere::Sphere;
 /// out of the screen. The endpoint of the ray on the screen (in the xy-plane) 
 /// can be denoted with two offset vectors `u` and `v`.
 
-fn color_ray(r: Ray) -> Color {
-    let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
-    let intersection = sphere.hit(&r, 0.0, 1.0);
+fn color_ray<T: Hittable>(r: Ray, world: &HittableObjects<T>) -> Color {    
+    let intersection = world.hit(&r, 0.0, f64::MAX);
 
     match intersection {
         Some(intersect) => {
@@ -45,6 +45,13 @@ fn main() {
     let width: usize = 400;
     let height: usize = (width as f64 / aspect_ratio) as usize;
 
+    // World
+    let mut world: HittableObjects<Sphere> = HittableObjects::new();
+    // Note that the order in which the objects are added to the list affects the 
+    // order in which a ray hits things.
+    world.add(Sphere::new(Point3::new(0.0,-100.5, -1.0), 100.0));
+    world.add(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5));
+
     // Camera
     let viewport_height = 2.0;
     let viewport_width = aspect_ratio * viewport_height;
@@ -57,8 +64,9 @@ fn main() {
     // This position is relative to the center of the screen. So, to get to the 
     // eye from the center, you go left and down by one half and then move 
     // towards the eye by focal length. 
-    let lower_left_corner = origin - 0.5 * horizontal - 0.5 * vertical - 
-        Vector3::new(0.0, 0.0, focal_length);
+    let lower_left_corner = -0.5 * horizontal - 0.5 * vertical - Vector3::new(0.0, 0.0, focal_length);
+
+    // Render
     
     // Render a PPM file in P6 format, P6 format is a little simpler than P3 format
     let path = Path::new("./test_file.ppm");
@@ -77,9 +85,9 @@ fn main() {
         for i in 0..width {
             let u = (i as f64) / w;
             let v = (j as f64) / h;
-            let direction = lower_left_corner - origin + u * horizontal + v * vertical;
+            let direction = lower_left_corner + u * horizontal + v * vertical;
             let r = Ray::new(origin, direction);
-            let pixel = color_ray(r).to_pixel();
+            let pixel = color_ray(r, &world).to_pixel();
             binary_pixels.push(pixel.0);
             binary_pixels.push(pixel.1);
             binary_pixels.push(pixel.2);
