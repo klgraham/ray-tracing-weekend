@@ -22,7 +22,13 @@ pub struct DiffuseNonMetal {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Metal {
-    pub albedo: Color
+    pub albedo: Color,
+    pub fuzz: f64
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Dielectric {
+    pub index_of_refraction: f64
 }
 
 impl DiffuseNonMetal {
@@ -43,20 +49,38 @@ impl Material for DiffuseNonMetal {
 }
 
 impl Metal {
-    pub fn new(albedo: Color) -> Metal {
-        Metal { albedo }
+    pub fn new(albedo: Color, fuzz: f64) -> Metal {
+        Metal { albedo, fuzz }
     }
 }
 
 impl Material for Metal {
     fn scatter(&self, incident_ray: Ray, intersect: &Intersection) -> Option<(Ray, Color)> {
         let reflection = incident_ray.direction.to_unit_vector().reflect(intersect.normal);
-        let scattered_ray = Ray::new(intersect.p, reflection);
+        let direction = reflection + self.fuzz * random_point_in_unit_sphere();
+        let scattered_ray = Ray::new(intersect.p, direction);
 
         if scattered_ray.direction.dot(intersect.normal) > 0.0 {
             Some((scattered_ray, self.albedo))
         } else {
             None
         }
+    }
+}
+
+impl Dielectric {
+    pub fn new(index_of_refraction: f64) -> Dielectric {
+        Dielectric { index_of_refraction }
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, incident_ray: Ray, intersect: &Intersection) -> Option<(Ray, Color)> {
+        let attenuation = Colors::White.value();
+        let refraction_ratio = if intersect.ray_hit_outer_surface {1.0 / self.index_of_refraction} else {self.index_of_refraction};
+        let incident_direction = incident_ray.direction.to_unit_vector();
+        let refracted_direction = incident_direction.refract(intersect.normal, refraction_ratio);
+        let scattered_ray = Ray::new(intersect.p, refracted_direction);
+        Some((scattered_ray, attenuation))
     }
 }

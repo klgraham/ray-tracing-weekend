@@ -74,6 +74,15 @@ impl Vector3 {
     pub fn reflect(&self, n: Vector3) -> Vector3 {
         return *self - 2.0 * self.dot(n) * n;
     }
+
+    /// Refraction via Snell's law
+    pub fn refract(&self, n: Vector3, etai_over_etat: f64) -> Vector3 {
+        let cos_theta = n.dot(-(*self));
+        let r_out_perpendicular: Vector3 = etai_over_etat * (*self + cos_theta * n);
+        let r_out_parallel: Vector3 = (1.0 - r_out_perpendicular.length_squared()).abs().sqrt() * -n;
+        return r_out_perpendicular + r_out_parallel;
+
+    }
 }
 
 

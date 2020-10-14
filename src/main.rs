@@ -70,9 +70,9 @@ fn main() {
     // order in which a ray hits things.
 
     let material_ground = DiffuseNonMetal::new(Color::new(0.8, 0.8, 0.0));
-    let material_center = DiffuseNonMetal::new(Color::new(0.7, 0.3, 0.3));
-    let material_left = Metal::new(Color::new(0.8, 0.8, 0.8));
-    let material_right = Metal::new(Color::new(0.8, 0.6, 0.2));
+    let material_center = Dielectric::new(1.5);
+    let material_left = Dielectric::new(1.5);
+    let material_right = Metal::new(Color::new(0.8, 0.6, 0.2), 1.0);
 
     world.add(Sphere::new(Point3::new(0.0,-100.5, -1.0), 100.0, &material_ground));
     world.add(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5, &material_center));
@@ -96,6 +96,7 @@ fn main() {
     let mut rng = rand::thread_rng();
 
     // Note that the height coordinate is written backwards
+    // Should be able to parallelize the i and j loops. The sampling loop can't be though.
     for j in (0..height).rev() {
         println!("\rScanlines remaining: {}", j);
         for i in 0..width {
