@@ -9,6 +9,7 @@ mod geom;
 mod ray;
 mod shapes;
 mod camera;
+mod material;
 
 use color::{Color, Colors};
 use ray::Ray;
@@ -16,6 +17,7 @@ use geom::*;
 use camera::Camera;
 use shapes::{Hittable, HittableObjects};
 use shapes::sphere::{Sphere};
+use material::*;
 
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will 
@@ -34,14 +36,14 @@ fn compute_ray_color<T: Hittable>(r: Ray, world: &HittableObjects<T>, depth: i32
 
     match intersection {
         Some(intersect) => {
-            // Each time a ray hits something, we a create a ray with random direction. 
-            // This simulates the random reflection and absorption that 
-            // happens when light hits a diffuse material.
-            let target = intersect.p + random_in_hemisphere(&intersect.normal);
-            // let target = intersect.p + intersect.normal + random_unit_vector();
-            let n = intersect.normal;
-            let ray = Ray::new(intersect.p, target - intersect.p);
-            return 0.5 * compute_ray_color(ray, world, depth - 1);
+            let ray_and_color = intersect.material.scatter(r, &intersect);
+
+            match ray_and_color {
+                Some((scattered_ray, attenuation)) => {
+                    return attenuation * compute_ray_color(scattered_ray, world, depth - 1);
+                },
+                None => { return Colors::Black.value() }
+            }
         },
         None => {
             let ray_direction = r.direction.to_unit_vector();
@@ -66,8 +68,16 @@ fn main() {
     let mut world: HittableObjects<Sphere> = HittableObjects::new();
     // Note that the order in which the objects are added to the list affects the 
     // order in which a ray hits things.
-    world.add(Sphere::new(Point3::new(0.0,-100.5, -1.0), 100.0));
-    world.add(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5));
+
+    let material_ground = DiffuseNonMetal::new(Color::new(0.8, 0.8, 0.0));
+    let material_center = DiffuseNonMetal::new(Color::new(0.7, 0.3, 0.3));
+    let material_left = Metal::new(Color::new(0.8, 0.8, 0.8));
+    let material_right = Metal::new(Color::new(0.8, 0.6, 0.2));
+
+    world.add(Sphere::new(Point3::new(0.0,-100.5, -1.0), 100.0, &material_ground));
+    world.add(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5, &material_center));
+    world.add(Sphere::new(Point3::new(-1.0,0.0,-1.0), 0.5, &material_left));
+    world.add(Sphere::new(Point3::new(1.0,0.0,-1.0), 0.5, &material_right));
 
     // Camera
     let camera = Camera::new(aspect_ratio, 2.0, 1.0);

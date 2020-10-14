@@ -1,27 +1,29 @@
 use crate::{Point3, Vector3};
 use crate::shapes::{Hittable, Intersection};
 use crate::ray::Ray;
+use crate::material::Material;
 use rand::prelude::*;
 
 
 /// sphere of radius `radius`, with center at `center` 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Sphere {
+pub struct Sphere<'a> {
     pub center: Point3,
-    pub radius: f64
+    pub radius: f64,
+    pub material: &'a Material
 }
 
-impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Sphere {
-        Sphere { center: center, radius }
+
+impl<'a> Sphere<'a> {
+    pub fn new<T: Material>(center: Point3, radius: f64, material: &'a T) -> Sphere<'a> {
+        Sphere { center, radius, material }
     }
     
-    pub fn unit_sphere_at_origin() -> Sphere {
-        Sphere::new(Point3::origin(), 1.)
-    }
+    // pub fn unit_sphere_at_origin() -> Sphere {
+    //     Sphere::new(Point3::origin(), 1.)
+    // }
 }
 
-impl Hittable for Sphere {
+impl<'a> Hittable for Sphere<'a> {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         // origin - center
         let oc = r.origin - self.center;
@@ -38,7 +40,7 @@ impl Hittable for Sphere {
                 // point where ray hits sphere
                 let p = r.at(t);
                 let normal: Vector3 = (p - self.center) / self.radius;
-                let intersection = Intersection::new(&r, t, p, normal);
+                let intersection = Intersection::new(&r, t, p, normal, self.material);
                 return Some(intersection);
             }
 
@@ -47,7 +49,7 @@ impl Hittable for Sphere {
                 // point where ray hits sphere
                 let p = r.at(t);
                 let normal: Vector3 = (p - self.center) / self.radius;
-                let intersection = Intersection::new(&r, t, p, normal);
+                let intersection = Intersection::new(&r, t, p, normal, self.material);
                 return Some(intersection);
             }
         }

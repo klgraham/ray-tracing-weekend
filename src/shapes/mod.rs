@@ -1,22 +1,25 @@
 use crate::ray::Ray;
 use crate::geom::{Point3, Vector3};
+use crate::material::Material;
 
 pub mod sphere;
 
-
-pub struct Intersection {
+/// Records the details of a `Ray` hitting a `Hittable` shape (with 
+/// normal vector `normal`, made of a particular `Material`) at point p, at `t
+/// `. 
+pub struct Intersection<'a> {
     pub t: f64,
     pub p: Point3,
     pub normal: Vector3,
-    // pub ray_hit_outer_surface: bool
+    pub material: &'a Material
 }
 
-impl Intersection {
-    pub fn new(r: &Ray, t: f64, p: Point3, normal: Vector3) -> Intersection {
+impl<'a> Intersection<'a> {
+    pub fn new(r: &Ray, t: f64, p: Point3, normal: Vector3, material: &'a Material) -> Intersection<'a> {
         // which side of object did ray hit?
         let ray_hit_outer_surface = r.direction.dot(normal) < 0.0;
         let new_normal = if ray_hit_outer_surface {normal} else {-normal};
-        Intersection { t, p, normal: new_normal }
+        Intersection { t, p, normal: new_normal, material }
     }
 }
 

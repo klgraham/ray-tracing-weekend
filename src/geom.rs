@@ -70,6 +70,10 @@ impl Vector3 {
         )
     }
 
+    /// Reflects vector against a surface with normal vector `n`
+    pub fn reflect(&self, n: Vector3) -> Vector3 {
+        return *self - 2.0 * self.dot(n) * n;
+    }
 }
 
 
