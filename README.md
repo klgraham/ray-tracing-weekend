@@ -1,2 +1,3 @@
 # ray-tracing-weekend
-Ray tracing in one weekend, in Rust
+
+A Rust implementation of the raytracer from [Ray tracing in one weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html).

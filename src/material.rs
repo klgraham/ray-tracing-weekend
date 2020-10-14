@@ -8,6 +8,7 @@ use crate::shapes::Intersection;
 use crate::ray::Ray;
 use crate::color::*;
 use crate::geom::*;
+use rand::prelude::*;
 
 
 pub trait Material {
@@ -72,6 +73,12 @@ impl Dielectric {
     pub fn new(index_of_refraction: f64) -> Dielectric {
         Dielectric { index_of_refraction }
     }
+
+    fn reflectance(cosine: f64, ref_index: f64) -> f64 {
+        let mut r0 = (1.0 - ref_index) / (1.0 + ref_index);
+        r0 *= r0;
+        return r0 + (1.0 - r0) * (1.0 - cosine).powi(5);
+    }
 }
 
 impl Material for Dielectric {
@@ -79,7 +86,19 @@ impl Material for Dielectric {
         let attenuation = Colors::White.value();
         let refraction_ratio = if intersect.ray_hit_outer_surface {1.0 / self.index_of_refraction} else {self.index_of_refraction};
         let incident_direction = incident_ray.direction.to_unit_vector();
-        let refracted_direction = incident_direction.refract(intersect.normal, refraction_ratio);
+
+        let cos_theta = intersect.normal.dot(-incident_direction).min(1.0);
+        let sin_theta = (1.0 - cos_theta*cos_theta).sqrt();
+        let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let mut rng = rand::thread_rng();
+        let condition = cannot_refract || Dielectric::reflectance(cos_theta, refraction_ratio) > rng.gen();
+
+        let refracted_direction = if condition {
+            incident_direction.reflect(intersect.normal)
+        } else {
+            incident_direction.refract(intersect.normal, refraction_ratio)
+        };
+
         let scattered_ray = Ray::new(intersect.p, refracted_direction);
         Some((scattered_ray, attenuation))
     }
