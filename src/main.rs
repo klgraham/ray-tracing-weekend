@@ -40,7 +40,7 @@ fn compute_ray_color<T: Hittable>(r: Ray, world: &HittableObjects<T>, depth: i32
 
             match ray_and_color {
                 Some((scattered_ray, attenuation)) => {
-                    return attenuation * compute_ray_color(scattered_ray, world, depth - 1);
+                    return attenuation.mult(compute_ray_color(scattered_ray, world, depth - 1));
                 },
                 None => { return Colors::Black.value() }
             }

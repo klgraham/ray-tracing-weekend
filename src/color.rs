@@ -5,7 +5,7 @@ use std::ops::{Add, Sub, Mul, AddAssign};
 // color.rs
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Color {
     pub red: f64,
     pub green: f64,
@@ -21,6 +21,10 @@ pub enum Colors {
 impl Color {
     pub fn new(red: f64, green: f64, blue: f64) -> Self {
         Color {red, green, blue}
+    }
+
+    pub fn mult(&self, other: Color) -> Color {
+        Color::new(self.red * other.red, self.green * other.green, self.blue * other.blue)
     }
     
     pub fn to_pixel(&self) -> (u8, u8, u8) {

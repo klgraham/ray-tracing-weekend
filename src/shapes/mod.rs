@@ -18,7 +18,7 @@ pub struct Intersection<'a> {
 impl<'a> Intersection<'a> {
     pub fn new(r: &Ray, t: f64, p: Point3, normal: Vector3, material: &'a Material) -> Intersection<'a> {
         // which side of object did ray hit?
-        let ray_hit_outer_surface = r.direction.dot(normal) < 0.0;
+        let ray_hit_outer_surface = r.direction.dot(&normal) < 0.0;
         let new_normal = if ray_hit_outer_surface {normal} else {-normal};
         Intersection { t, p, normal: new_normal, ray_hit_outer_surface, material }
     }

@@ -28,7 +28,7 @@ impl<'a> Hittable for Sphere<'a> {
         // origin - center
         let oc = r.origin - self.center;
         let a = r.direction.length_squared();
-        let half_b = r.direction.dot(oc);
+        let half_b = r.direction.dot(&oc);
         let c = oc.length_squared() - self.radius * self.radius;
         let discriminant: f64 = half_b * half_b - a*c;
         

@@ -2,7 +2,7 @@ use crate::geom::{Point3, Vector3};
 
 // ray.rs
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug)]
 pub struct Ray {
     pub origin: Point3,
     pub direction: Vector3
