@@ -1,6 +1,6 @@
-use std::cmp::PartialEq;
-use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign};
 use rand::prelude::*;
+use std::cmp::PartialEq;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 // geom.rs
 
@@ -9,7 +9,7 @@ use rand::prelude::*;
 pub struct Point3 {
     pub x: f64,
     pub y: f64,
-    pub z: f64
+    pub z: f64,
 }
 
 /// A 3D vector in Euclidean space
@@ -17,23 +17,26 @@ pub struct Point3 {
 pub struct Vector3 {
     pub x: f64,
     pub y: f64,
-    pub z: f64
+    pub z: f64,
 }
-
 
 impl Point3 {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Point3 {x, y, z}
+        Point3 { x, y, z }
     }
 
     pub fn origin() -> Self {
         Point3::new(0.0, 0.0, 0.0)
     }
+
+    pub fn to_vector(&self) -> Vector3 {
+        Vector3::new(self.x, self.y, self.z)
+    }
 }
 
 impl Vector3 {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Vector3 {x, y, z}
+        Vector3 { x, y, z }
     }
 
     /// Returns the $L^2$ norm
@@ -49,9 +52,7 @@ impl Vector3 {
     /// Returns a unit vector
     pub fn to_unit_vector(self) -> Self {
         let length = self.norm();
-        Vector3::new(self.x / length,
-                    self.y / length,
-                    self.z / length)
+        Vector3::new(self.x / length, self.y / length, self.z / length)
     }
 
     /// Dot product
@@ -66,7 +67,7 @@ impl Vector3 {
         Vector3::new(
             self.y * &z - self.z * &y,
             self.z * &x - self.x * &z,
-            self.x * &y - self.y * &x
+            self.x * &y - self.y * &x,
         )
     }
 
@@ -79,12 +80,11 @@ impl Vector3 {
     pub fn refract(&self, n: &Vector3, etai_over_etat: f64) -> Vector3 {
         let cos_theta = (-(*self)).dot(n);
         let r_out_perpendicular: Vector3 = etai_over_etat * (*self + cos_theta * (*n));
-        let r_out_parallel: Vector3 = (1.0 - r_out_perpendicular.length_squared()).abs().sqrt() * -(*n);
+        let r_out_parallel: Vector3 =
+            (1.0 - r_out_perpendicular.length_squared()).abs().sqrt() * -(*n);
         return r_out_perpendicular + r_out_parallel;
-
     }
 }
-
 
 /// Returns a random point inside the unit sphere
 pub fn random_point_in_unit_sphere() -> Vector3 {
@@ -98,14 +98,14 @@ pub fn random_point_in_unit_sphere() -> Vector3 {
         if v.length_squared() >= 1.0 {
             continue;
         }
-        return v
+        return v;
     }
 }
 
 pub fn random_unit_vector() -> Vector3 {
     let mut rng = rand::thread_rng();
-    let phi:f64 = rng.gen_range(0.0, 2.0 * std::f64::consts::PI);
-    let z:f64 = rng.gen_range(-1.0, 1.0);
+    let phi: f64 = rng.gen_range(0.0, 2.0 * std::f64::consts::PI);
+    let z: f64 = rng.gen_range(-1.0, 1.0);
     let r = (1.0 - z * z).sqrt();
     Vector3::new(r * phi.cos(), r * phi.sin(), z)
 }
@@ -120,6 +120,18 @@ pub fn random_in_hemisphere(normal: &Vector3) -> Vector3 {
     }
 }
 
+pub fn random_in_unit_disk() -> Vector3 {
+    loop {
+        let mut rng = rand::thread_rng();
+        let x: f64 = rng.gen_range(-1.0, 1.0);
+        let y: f64 = rng.gen_range(-1.0, 1.0);
+        let p = Vector3::new(x, y, 0.0);
+        if p.length_squared() >= 1.0 {
+            continue;
+        }
+        return p;
+    }
+}
 
 /// Point + Vector addition
 impl Add<Vector3> for Point3 {
@@ -268,9 +280,9 @@ impl Mul<Vector3> for f64 {
 /// Scalar multiplication for vector, with assignment
 impl MulAssign<f64> for Vector3 {
     fn mul_assign(&mut self, a: f64) {
-        self.x *= a;        
-        self.y *= a;        
-        self.z *= a;        
+        self.x *= a;
+        self.y *= a;
+        self.z *= a;
     }
 }
 
@@ -295,12 +307,11 @@ impl Div<f64> for Vector3 {
 /// Scalar division for vector, with assignment
 impl DivAssign<f64> for Vector3 {
     fn div_assign(&mut self, a: f64) {
-        self.x /= a;        
-        self.y /= a;        
-        self.z /= a;       
+        self.x /= a;
+        self.y /= a;
+        self.z /= a;
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -381,15 +392,15 @@ mod tests {
     fn can_compute_dot_prod() {
         let u = Vector3::new(1.0, 2.0, 3.0);
         let v = Vector3::new(2.0, 3.0, 4.0);
-        assert_eq!(u.dot(v), 20f64);
+        assert_eq!(u.dot(&v), 20f64);
     }
 
     #[test]
     fn can_compute_cross_prod() {
         let u = Vector3::new(1.0, 2.0, 3.0);
         let v = Vector3::new(2.0, 3.0, 4.0);
-        assert_eq!(u.cross(v), Vector3::new(-1.0, 2.0, -1.0));
-        assert_eq!(v.cross(u), Vector3::new(1.0, -2.0, 1.0));
+        assert_eq!(u.cross(&v), Vector3::new(-1.0, 2.0, -1.0));
+        assert_eq!(v.cross(&u), Vector3::new(1.0, -2.0, 1.0));
     }
 
     #[test]

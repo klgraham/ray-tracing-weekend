@@ -1,26 +1,42 @@
-use crate::ray::Ray;
 use crate::geom::{Point3, Vector3};
 use crate::material::Material;
+use crate::ray::Ray;
 
 pub mod sphere;
 
-/// Records the details of a `Ray` hitting a `Hittable` shape (with 
+/// Records the details of a `Ray` hitting a `Hittable` shape (with
 /// normal vector `normal`, made of a particular `Material`) at point p, at `t
-/// `. 
+/// `.
 pub struct Intersection<'a> {
     pub t: f64,
     pub p: Point3,
     pub normal: Vector3,
     pub ray_hit_outer_surface: bool,
-    pub material: &'a Material
+    pub material: &'a Material,
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new(r: &Ray, t: f64, p: Point3, normal: Vector3, material: &'a Material) -> Intersection<'a> {
+    pub fn new(
+        r: &Ray,
+        t: f64,
+        p: Point3,
+        normal: Vector3,
+        material: &'a Material,
+    ) -> Intersection<'a> {
         // which side of object did ray hit?
         let ray_hit_outer_surface = r.direction.dot(&normal) < 0.0;
-        let new_normal = if ray_hit_outer_surface {normal} else {-normal};
-        Intersection { t, p, normal: new_normal, ray_hit_outer_surface, material }
+        let new_normal = if ray_hit_outer_surface {
+            normal
+        } else {
+            -normal
+        };
+        Intersection {
+            t,
+            p,
+            normal: new_normal,
+            ray_hit_outer_surface,
+            material,
+        }
     }
 }
 
@@ -29,16 +45,17 @@ pub trait Hittable {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
 }
 
-
 pub struct HittableObjects<T: Hittable> {
-    // The HittableObjects list will own its objects, so no lifetime 
+    // The HittableObjects list will own its objects, so no lifetime
     // parameter needed
-    pub objects: Vec<T> 
+    pub objects: Vec<T>,
 }
 
 impl<T: Hittable> HittableObjects<T> {
     pub fn new() -> HittableObjects<T> {
-        HittableObjects { objects: Vec::new() }
+        HittableObjects {
+            objects: Vec::new(),
+        }
     }
 
     /// Add item
@@ -49,7 +66,6 @@ impl<T: Hittable> HittableObjects<T> {
     pub fn clear(&mut self) {
         self.objects.clear();
     }
-
 }
 
 impl<T: Hittable> Hittable for HittableObjects<T> {
@@ -65,7 +81,7 @@ impl<T: Hittable> Hittable for HittableObjects<T> {
                         closest_hit = intersect.t;
                         closest_intersection = Some(intersect);
                     }
-                },
+                }
                 None => {}
             }
         }

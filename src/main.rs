@@ -1,32 +1,30 @@
-use std::fs::{File};
-use std::path::Path;
-use std::io::{Write};
 use rand::prelude::*;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 
-
+mod camera;
 mod color;
 mod geom;
+mod material;
 mod ray;
 mod shapes;
-mod camera;
-mod material;
 
-use color::{Color, Colors};
-use ray::Ray;
-use geom::*;
 use camera::Camera;
-use shapes::{Hittable, HittableObjects};
-use shapes::sphere::{Sphere};
+use color::{Color, Colors};
+use geom::*;
 use material::*;
+use ray::Ray;
+use shapes::sphere::Sphere;
+use shapes::{Hittable, HittableObjects};
 
-
-/// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will 
-/// basically be an xy-plane, where the origin is in the lower left corner, 
-/// the x-axis goes to the right, and the y-axis goes up. The z-axis points 
-/// out of the screen. The endpoint of the ray on the screen (in the xy-plane) 
+/// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
+/// basically be an xy-plane, where the origin is in the lower left corner,
+/// the x-axis goes to the right, and the y-axis goes up. The z-axis points
+/// out of the screen. The endpoint of the ray on the screen (in the xy-plane)
 /// can be denoted with two offset vectors `u` and `v`.
 
-fn compute_ray_color<T: Hittable>(r: Ray, world: &HittableObjects<T>, depth: i32) -> Color {    
+fn compute_ray_color<T: Hittable>(r: Ray, world: &HittableObjects<T>, depth: i32) -> Color {
     if depth <= 0 {
         // This gives us an end to the recursion.
         return Colors::Black.value();
@@ -41,17 +39,17 @@ fn compute_ray_color<T: Hittable>(r: Ray, world: &HittableObjects<T>, depth: i32
             match ray_and_color {
                 Some((scattered_ray, attenuation)) => {
                     return attenuation.mult(compute_ray_color(scattered_ray, world, depth - 1));
-                },
-                None => { return Colors::Black.value() }
+                }
+                None => return Colors::Black.value(),
             }
-        },
+        }
         None => {
             let ray_direction = r.direction.to_unit_vector();
             // y is [-1,1], so t is [0,1]
             let t = 0.5 * (ray_direction.y + 1.0);
             // linear interpolation between while and a light blue, based on y-component of ray
             // blendedValue = (1−t)*startValue + t * endValue
-            return (1.0-t) * Colors::White.value() + t * Color::new(0.5, 0.7, 1.0);
+            return (1.0 - t) * Colors::White.value() + t * Color::new(0.5, 0.7, 1.0);
         }
     }
 }
@@ -65,33 +63,73 @@ fn main() {
     let max_depth: i32 = 50;
 
     // World
+    let R = (std::f64::consts::PI / 4.0).cos();
     let mut world: HittableObjects<Sphere> = HittableObjects::new();
-    // Note that the order in which the objects are added to the list affects the 
+    // Note that the order in which the objects are added to the list affects the
     // order in which a ray hits things.
 
+    // let material_left = DiffuseNonMetal::new(Colors::Blue.value());
+    // let material_right = DiffuseNonMetal::new(Colors::Red.value());
     let material_ground = DiffuseNonMetal::new(Color::new(0.8, 0.8, 0.0));
     let material_center = DiffuseNonMetal::new(Color::new(0.1, 0.2, 0.5));
     let material_left = Dielectric::new(1.5);
     let material_right = Metal::new(Color::new(0.8, 0.6, 0.2), 1.0);
 
-    world.add(Sphere::new(Point3::new(0.0,-100.5, -1.0), 100.0, &material_ground));
-    world.add(Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5, &material_center));
-    world.add(Sphere::new(Point3::new(-1.0,0.0,-1.0), 0.5, &material_left));
+    // world.add(Sphere::new(Point3::new(-R, 0.0, -1.0), R, &material_left));
+    // world.add(Sphere::new(Point3::new(R, 0.0, -1.0), R, &material_right));
+    world.add(Sphere::new(
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+        &material_ground,
+    ));
+    world.add(Sphere::new(
+        Point3::new(0.0, 0.0, -1.0),
+        0.5,
+        &material_center,
+    ));
+    world.add(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        &material_left,
+    ));
 
     // for hollow glass sphere, make radius < 0
-    // world.add(Sphere::new(Point3::new(-1.0,0.0,-1.0), -0.4, &material_left));
-    world.add(Sphere::new(Point3::new(1.0,0.0,-1.0), 0.5, &material_right));
+    world.add(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        -0.45,
+        &material_left,
+    ));
+    world.add(Sphere::new(
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
+        &material_right,
+    ));
 
     // Camera
-    let camera = Camera::new(aspect_ratio, 2.0, 1.0);
-    
-    // Render    
+    let look_from = Point3::new(3., 3., 2.);
+    let look_at = Point3::new(0., 0., -1.);
+    let view_up = Vector3::new(0., 1., 0.);
+    let dist_to_focus = (look_from - look_at).norm();
+    let aperture = 2.0_f64;
+
+    let camera = Camera::new(
+        look_from,
+        look_at,
+        view_up,
+        20.0,
+        aspect_ratio,
+        aperture,
+        dist_to_focus,
+    );
+
+    // Render
     // Render a PPM file in P6 format, P6 format is a little simpler than P3 format
     let path = Path::new("./test_file.ppm");
     let mut file = File::create(path).expect("Failed to create file.");
-    
+
     let header = format!("P6\n{} {}\n255\n", width, height);
-    file.write(header.as_bytes()).expect("Failed to write PPM header.");
+    file.write(header.as_bytes())
+        .expect("Failed to write PPM header.");
 
     let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
     let w = (width as f64) - 1.0;
@@ -120,5 +158,6 @@ fn main() {
         }
     }
     println!("Done!");
-    file.write(&binary_pixels).expect("Failed to write color map to PPM.");
+    file.write(&binary_pixels)
+        .expect("Failed to write color map to PPM.");
 }

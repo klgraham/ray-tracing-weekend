@@ -5,13 +5,13 @@ use crate::geom::{Point3, Vector3};
 #[derive(Debug)]
 pub struct Ray {
     pub origin: Point3,
-    pub direction: Vector3
+    pub direction: Vector3,
 }
 
 impl Ray {
     /// Creates a ray at `origin` along direction `direction`
     pub fn new(origin: Point3, direction: Vector3) -> Ray {
-        Ray {origin, direction}
+        Ray { origin, direction }
     }
 
     /// Gives the ray at `t`.
@@ -20,12 +20,10 @@ impl Ray {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::Ray;
     use crate::geom::{Point3, Vector3};
-
 
     #[test]
     fn can_create_rays() {
