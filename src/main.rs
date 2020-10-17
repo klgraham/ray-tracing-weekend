@@ -81,10 +81,10 @@ fn make_random_scene() -> World {
 
     let albedo = Color::new(0.4, 0.2, 0.1);
     let material2 = Material::DiffuseNonMetal(albedo);
-    objects.add(Box::new(Sphere::new(Point3::new(0.4,0.2,0.1), 1., material2)));
+    objects.add(Box::new(Sphere::new(Point3::new(-4., 1., 0.), 1., material2)));
     // materials.push(material2);
 
-    let material3 = Material::Metal(Color::new(0.7,0.6,0.), 0.);
+    let material3 = Material::Metal(Color::new(0.7,0.6,0.5), 0.);
     objects.add(Box::new(Sphere::new(Point3::new(4., 1., 0.), 1., material3)));
     // materials.push(material3);
 
@@ -127,7 +127,7 @@ fn main() {
     // Image
     let aspect_ratio: f64 = 3.0/2.0;
     let width: usize = 1200;
-    let height: usize = (width as f64 / aspect_ratio) as usize;
+    let height: usize = ((width as f64) / aspect_ratio) as usize;
     let samples_per_pixel: u32 = 500;
     let max_depth: i32 = 50;
 
@@ -139,7 +139,7 @@ fn main() {
     let look_at = Point3::origin();
     let view_up = Vector3::new(0., 1., 0.);
     let dist_to_focus = 10_f64;
-    let aperture = 2_f64;
+    let aperture = 0.1_f64;
 
     let camera = Camera::new(
         look_from,
