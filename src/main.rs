@@ -26,18 +26,14 @@ use std::rc::Rc;
 /// can be denoted with two offset vectors `u` and `v`.
 
 struct World {
-    // pub materials: Vec<Rc<dyn Material>>,
     pub objects: HittableObjects
 }
 
 
 fn make_random_scene() -> World {
-    // let mut materials: Vec<Rc<dyn Material>> = Vec::new();
     let mut objects = HittableObjects::new();
-    // let mut objects: Vec<Box<dyn Hittable>> = Vec::new();
-
+    
     let ground_material = Material::DiffuseNonMetal(Color::new(0.5, 0.5, 0.5));
-    // materials.push(ground_material);   
     objects.add(Box::new(Sphere::new(Point3::new(0., -1000., 0.), 1000., ground_material)));
 
     let mut rng = rand::thread_rng();
@@ -56,20 +52,17 @@ fn make_random_scene() -> World {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Material::DiffuseNonMetal(albedo);
-                    objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
-                    // materials.push(sphere_material);
+                    objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));                    
                 } else if p_material < 0.95 {
                     // metal
                     let albedo = Color::random();
                     let fuzz: f64 = rng.gen_range(0., 0.5);
                     let sphere_material = Material::Metal(albedo, fuzz);
-                    objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));           
-                    // materials.push(sphere_material);
+                    objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 } else {
                     // dielectric
                     let sphere_material = Material::Dielectric(1.5);
                     objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
-                    // materials.push(sphere_material);                   
                 }
             }
         }
@@ -77,17 +70,14 @@ fn make_random_scene() -> World {
 
     let material1 = Material::Dielectric(1.5);
     objects.add(Box::new(Sphere::new(Point3::new(0., 1., 0.), 1., material1)));
-    // materials.push(material1);
-
+    
     let albedo = Color::new(0.4, 0.2, 0.1);
     let material2 = Material::DiffuseNonMetal(albedo);
     objects.add(Box::new(Sphere::new(Point3::new(-4., 1., 0.), 1., material2)));
-    // materials.push(material2);
-
+    
     let material3 = Material::Metal(Color::new(0.7,0.6,0.5), 0.);
     objects.add(Box::new(Sphere::new(Point3::new(4., 1., 0.), 1., material3)));
-    // materials.push(material3);
-
+    
     return World { objects };
 }
 
@@ -125,9 +115,9 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
 
 fn main() {
     // Image
-    let aspect_ratio: f64 = 3.0/2.0;
-    let width: usize = 1200;
-    let height: usize = ((width as f64) / aspect_ratio) as usize;
+    let aspect_ratio: f64 = 16.0/9.0;
+    let height: usize = 720;
+    let width: usize = ((height as f64) * aspect_ratio) as usize;
     let samples_per_pixel: u32 = 500;
     let max_depth: i32 = 50;
 
@@ -153,7 +143,8 @@ fn main() {
 
     // Render
     // Render a PPM file in P6 format, P6 format is a little simpler than P3 format
-    let path = Path::new("./scene.ppm");
+    let filename = format!("scene_{}p.ppm", height);
+    let path = Path::new(&filename);
     let mut file = File::create(path).expect("Failed to create file.");
 
     let header = format!("P6\n{} {}\n255\n", width, height);
