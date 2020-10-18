@@ -16,9 +16,9 @@ use color::{Color, Colors};
 use geom::*;
 use material::Material;
 use ray::Ray;
-use shapes::sphere::Sphere;
-use shapes::{Hittable, HittableObjects};
-
+use shapes::{Hittable, HittableObjects, Shape};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
 /// basically be an xy-plane, where the origin is in the lower left corner,
@@ -35,7 +35,7 @@ fn make_random_scene() -> World {
     let mut objects = HittableObjects::new();
     
     let ground_material = Material::DiffuseNonMetal(Color::new(0.5, 0.5, 0.5));
-    objects.add(Box::new(Sphere::new(Point3::new(0., -1000., 0.), 1000., ground_material)));
+    objects.add(Shape::Sphere(Point3::new(0., -1000., 0.), 1000., ground_material));
 
     let mut rng = rand::thread_rng();
 
@@ -53,41 +53,41 @@ fn make_random_scene() -> World {
                     // dielectric => cinnabar
                     let cinnabar = Color::new(0.73, 0.27, 0.21);
                     let sphere_material = Material::Dielectric(3.02, cinnabar);
-                    objects.add(Box::new(Sphere::new(center, 0.1, sphere_material)));
+                    objects.add(Shape::Sphere(center, 0.1, sphere_material));
                 } else if p_material < 0.2 {
                     // dielectric => diamond
                     let diamond = Color::new(0.78, 0.88, 0.91);
                     let sphere_material = Material::Dielectric(3.02, diamond);
-                    objects.add(Box::new(Sphere::new(center, 0.1, sphere_material)));
+                    objects.add(Shape::Sphere(center, 0.1, sphere_material));
                 } else if p_material < 0.8 {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Material::DiffuseNonMetal(albedo);
-                    objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));                    
+                    objects.add(Shape::Sphere(center, 0.2, sphere_material));                   
                 } else if p_material < 0.95 {
                     // metal
                     let albedo = Color::random();
                     let fuzz: f64 = rng.gen_range(0., 0.5);
                     let sphere_material = Material::Metal(albedo, fuzz);
-                    objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
                 } else {
                     // dielectric
                     let sphere_material = Material::Dielectric(1.5, Colors::White.value());
-                    objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
                 }
             }
         }
     }
 
     let material1 = Material::Dielectric(1.5, Colors::White.value());
-    objects.add(Box::new(Sphere::new(Point3::new(0., 1., 0.), 1., material1)));
+    objects.add(Shape::Sphere(Point3::new(0., 1., 0.), 1., material1));
     
     let albedo = Color::new(0.4, 0.2, 0.1);
     let material2 = Material::DiffuseNonMetal(albedo);
-    objects.add(Box::new(Sphere::new(Point3::new(-4., 1., 0.), 1., material2)));
+    objects.add(Shape::Sphere(Point3::new(-4., 1., 0.), 1., material2));
     
     let material3 = Material::Metal(Color::new(0.7,0.6,0.5), 0.);
-    objects.add(Box::new(Sphere::new(Point3::new(4., 1., 0.), 1., material3)));
+    objects.add(Shape::Sphere(Point3::new(4., 1., 0.), 1., material3));
     
     return World { objects };
 }
@@ -165,25 +165,24 @@ fn main() {
     let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
     let w = (width as f64) - 1.0;
     let h = (height as f64) - 1.0;
-    let mut rng = rand::thread_rng();
-
+    
     let mut progress_bar = ProgressBar::new(height as u64);
-
-
+    let mut rng = rand::thread_rng();
+    
     // Note that the height coordinate is written backwards
-    // Should be able to parallelize the i and j loops. The sampling loop can't be though.
+    // Should be able to parallelize the i and j loops. The sampling loop can't be though.    
     for j in (0..height).rev() {        
         for i in 0..width {
             let mut color = Colors::Black.value();
-            
-            for _ in 0..samples_per_pixel {
+            for _ in 0..samples_per_pixel {                
                 let x: f64 = rng.gen();
                 let u = ((i as f64) + x) / w;
                 let y: f64 = rng.gen();
                 let v = ((j as f64) + y) / h;
                 let r = camera.get_ray(u, v);
-                color += compute_ray_color(r, &world, max_depth);
+                color += compute_ray_color(r, &world, max_depth);            
             }
+
             let pixel = color.sample_pixel(samples_per_pixel as u32);
             binary_pixels.push(pixel.0);
             binary_pixels.push(pixel.1);

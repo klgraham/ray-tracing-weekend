@@ -1,6 +1,7 @@
 use crate::geom::{random_in_unit_disk, Point3, Vector3};
 use crate::ray::Ray;
 
+#[derive(Debug)]
 pub struct Camera {
     // the eye is at the center of the screen, at z = focal_length
     // This position is relative to the center of the screen. So, to get to the
