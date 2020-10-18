@@ -13,7 +13,8 @@ use rand::prelude::*;
 pub enum Material {
     DiffuseNonMetal(Color),
     Metal(Color, f64),
-    Dielectric(f64)
+    // get known refractive indices from https://en.wikipedia.org/wiki/List_of_refractive_indices
+    Dielectric(f64, Color)
 }
 
 
@@ -48,8 +49,7 @@ impl Material {
                 }
             },
 
-            Material::Dielectric(index_of_refraction) => {
-                let attenuation = Colors::White.value();
+            Material::Dielectric(index_of_refraction, attenuation) => {
                 let refraction_ratio = if intersect.ray_hit_outer_surface {
                     1.0 / index_of_refraction
                 } else {

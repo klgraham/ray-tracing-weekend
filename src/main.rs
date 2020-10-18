@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use pbr::ProgressBar;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -17,7 +18,7 @@ use material::Material;
 use ray::Ray;
 use shapes::sphere::Sphere;
 use shapes::{Hittable, HittableObjects};
-use std::rc::Rc;
+
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
 /// basically be an xy-plane, where the origin is in the lower left corner,
@@ -48,7 +49,17 @@ fn make_random_scene() -> World {
             let center = Point3::new(x, 0.2, z);
 
             if (center - Point3::new(4., 0.2, 0.)).norm() > 0.9 {
-                if p_material < 0.8 {
+                if p_material < 0.1 {
+                    // dielectric => cinnabar
+                    let cinnabar = Color::new(0.73, 0.27, 0.21);
+                    let sphere_material = Material::Dielectric(3.02, cinnabar);
+                    objects.add(Box::new(Sphere::new(center, 0.1, sphere_material)));
+                } else if p_material < 0.2 {
+                    // dielectric => diamond
+                    let diamond = Color::new(0.78, 0.88, 0.91);
+                    let sphere_material = Material::Dielectric(3.02, diamond);
+                    objects.add(Box::new(Sphere::new(center, 0.1, sphere_material)));
+                } else if p_material < 0.8 {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Material::DiffuseNonMetal(albedo);
@@ -61,14 +72,14 @@ fn make_random_scene() -> World {
                     objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 } else {
                     // dielectric
-                    let sphere_material = Material::Dielectric(1.5);
+                    let sphere_material = Material::Dielectric(1.5, Colors::White.value());
                     objects.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
             }
         }
     }
 
-    let material1 = Material::Dielectric(1.5);
+    let material1 = Material::Dielectric(1.5, Colors::White.value());
     objects.add(Box::new(Sphere::new(Point3::new(0., 1., 0.), 1., material1)));
     
     let albedo = Color::new(0.4, 0.2, 0.1);
@@ -118,7 +129,7 @@ fn main() {
     let aspect_ratio: f64 = 16.0/9.0;
     let height: usize = 720;
     let width: usize = ((height as f64) * aspect_ratio) as usize;
-    let samples_per_pixel: u32 = 500;
+    let samples_per_pixel: usize = 500;
     let max_depth: i32 = 50;
 
     // World
@@ -156,13 +167,15 @@ fn main() {
     let h = (height as f64) - 1.0;
     let mut rng = rand::thread_rng();
 
+    let mut progress_bar = ProgressBar::new(height as u64);
+
+
     // Note that the height coordinate is written backwards
     // Should be able to parallelize the i and j loops. The sampling loop can't be though.
-    for j in (0..height).rev() {
-        println!("\rScanlines remaining: {}", j);
+    for j in (0..height).rev() {        
         for i in 0..width {
             let mut color = Colors::Black.value();
-
+            
             for _ in 0..samples_per_pixel {
                 let x: f64 = rng.gen();
                 let u = ((i as f64) + x) / w;
@@ -171,13 +184,14 @@ fn main() {
                 let r = camera.get_ray(u, v);
                 color += compute_ray_color(r, &world, max_depth);
             }
-            let pixel = color.sample_pixel(samples_per_pixel);
+            let pixel = color.sample_pixel(samples_per_pixel as u32);
             binary_pixels.push(pixel.0);
             binary_pixels.push(pixel.1);
             binary_pixels.push(pixel.2);
         }
+        progress_bar.inc();
     }
-    println!("Done!");
+    progress_bar.finish_print("Done.");
     file.write(&binary_pixels)
         .expect("Failed to write color map to PPM.");
 }
