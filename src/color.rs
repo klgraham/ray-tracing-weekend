@@ -4,7 +4,7 @@ use rand::prelude::*;
 
 // color.rs
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Color {
     pub red: f64,
     pub green: f64,
@@ -12,7 +12,7 @@ pub struct Color {
 }
 
 /// Constant colors
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Colors {
     Red,
     Green,

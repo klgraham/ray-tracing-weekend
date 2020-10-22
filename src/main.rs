@@ -17,8 +17,8 @@ use geom::*;
 use material::Material;
 use ray::Ray;
 use shapes::{Hittable, HittableObjects, Shape};
-use std::sync::{Arc, Mutex};
-use std::thread;
+// use std::sync::{Arc, Mutex};
+// use std::thread;
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
 /// basically be an xy-plane, where the origin is in the lower left corner,
@@ -128,7 +128,7 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
 fn main() {
     // Image
     let aspect_ratio: f64 = 16.0/9.0;
-    let height: usize = 720;
+    let height: usize = 480;
     let width: usize = ((height as f64) * aspect_ratio) as usize;
     let samples_per_pixel: usize = 500;
     let max_depth: i32 = 50;

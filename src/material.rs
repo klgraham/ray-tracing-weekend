@@ -9,7 +9,7 @@ use crate::shapes::Intersection;
 use rand::prelude::*;
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub enum Material {
     DiffuseNonMetal(Color),
     Metal(Color, f64),
