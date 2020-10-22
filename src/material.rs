@@ -26,8 +26,8 @@ fn dielectric_reflectance(cosine: f64, ref_index: f64) -> f64 {
 
 
 impl Material {
-    pub fn scatter(&self, incident_ray: Ray, intersect: &Intersection) -> Option<(Ray, Color)> {
-        match *self {
+    pub fn scatter(&self, incident_ray: Ray, intersect: &Intersection) -> Option<(Ray, &Color)> {
+        match self {
             Material::DiffuseNonMetal(albedo) => {
                 let scatter_direction = intersect.normal + random_unit_vector();
                 let scattered_ray = Ray::new(intersect.p, scatter_direction);
@@ -39,7 +39,7 @@ impl Material {
                     .direction
                     .to_unit_vector()
                     .reflect(&intersect.normal);
-                let direction = reflection + fuzz * random_point_in_unit_sphere();
+                let direction = reflection + (*fuzz) * random_point_in_unit_sphere();
                 let scattered_ray = Ray::new(intersect.p, direction);
 
                 if scattered_ray.direction.dot(&intersect.normal) > 0.0 {
@@ -53,7 +53,7 @@ impl Material {
                 let refraction_ratio = if intersect.ray_hit_outer_surface {
                     1.0 / index_of_refraction
                 } else {
-                    index_of_refraction
+                    *index_of_refraction
                 };
 
                 let incident_direction = incident_ray.direction.to_unit_vector();

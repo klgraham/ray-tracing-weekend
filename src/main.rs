@@ -103,7 +103,8 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
 
     match intersection {
         Some(intersect) => {
-            let ray_and_color = intersect.object.get_material().scatter(r, &intersect);
+            let intersection_material = intersect.object.get_material();
+            let ray_and_color = intersection_material.scatter(r, &intersect);
 
             match ray_and_color {
                 Some((scattered_ray, attenuation)) => {

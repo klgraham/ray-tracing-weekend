@@ -13,8 +13,8 @@ pub enum Shape {
 
 impl Hittable for Shape {
     fn get_material(&self) -> Material {
-        match *self {
-            Shape::Sphere(_center, _radius, material) => material,            
+        match self {
+            Shape::Sphere(_center, _radius, material) => *material,            
         }
     }
 
