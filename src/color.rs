@@ -1,6 +1,6 @@
+use rand::prelude::*;
 use std::cmp::PartialEq;
 use std::ops::{Add, AddAssign, Mul, Sub};
-use rand::prelude::*;
 
 // color.rs
 

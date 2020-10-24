@@ -1,5 +1,5 @@
-use rand::prelude::*;
 use pbr::ProgressBar;
+use rand::prelude::*;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -27,15 +27,18 @@ use shapes::{Hittable, HittableObjects, Shape};
 /// can be denoted with two offset vectors `u` and `v`.
 
 struct World {
-    pub objects: HittableObjects
+    pub objects: HittableObjects,
 }
-
 
 fn make_random_scene() -> World {
     let mut objects = HittableObjects::new();
-    
+
     let ground_material = Material::DiffuseNonMetal(Color::new(0.5, 0.5, 0.5));
-    objects.add(Shape::Sphere(Point3::new(0., -1000., 0.), 1000., ground_material));
+    objects.add(Shape::Sphere(
+        Point3::new(0., -1000., 0.),
+        1000.,
+        ground_material,
+    ));
 
     let mut rng = rand::thread_rng();
 
@@ -63,7 +66,7 @@ fn make_random_scene() -> World {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Material::DiffuseNonMetal(albedo);
-                    objects.add(Shape::Sphere(center, 0.2, sphere_material));                   
+                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
                 } else if p_material < 0.95 {
                     // metal
                     let albedo = Color::random();
@@ -81,17 +84,16 @@ fn make_random_scene() -> World {
 
     let material1 = Material::Dielectric(1.5, Colors::White.value());
     objects.add(Shape::Sphere(Point3::new(0., 1., 0.), 1., material1));
-    
+
     let albedo = Color::new(0.4, 0.2, 0.1);
     let material2 = Material::DiffuseNonMetal(albedo);
     objects.add(Shape::Sphere(Point3::new(-4., 1., 0.), 1., material2));
-    
-    let material3 = Material::Metal(Color::new(0.7,0.6,0.5), 0.);
+
+    let material3 = Material::Metal(Color::new(0.7, 0.6, 0.5), 0.);
     objects.add(Shape::Sphere(Point3::new(4., 1., 0.), 1., material3));
-    
+
     return World { objects };
 }
-
 
 fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
     if depth <= 0 {
@@ -124,10 +126,9 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
     }
 }
 
-
 fn main() {
     // Image
-    let aspect_ratio: f64 = 16.0/9.0;
+    let aspect_ratio: f64 = 16.0 / 9.0;
     let height: usize = 480;
     let width: usize = ((height as f64) * aspect_ratio) as usize;
     let samples_per_pixel: usize = 500;
@@ -135,7 +136,7 @@ fn main() {
 
     // World
     let world = make_random_scene();
-        
+
     // Camera
     let look_from = Point3::new(13., 2., 3.);
     let look_at = Point3::origin();
@@ -166,22 +167,22 @@ fn main() {
     let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
     let w = (width as f64) - 1.0;
     let h = (height as f64) - 1.0;
-    
+
     let mut progress_bar = ProgressBar::new(height as u64);
     let mut rng = rand::thread_rng();
-    
+
     // Note that the height coordinate is written backwards
-    // Should be able to parallelize the i and j loops. The sampling loop can't be though.    
-    for j in (0..height).rev() {        
+    // Should be able to parallelize the i and j loops. The sampling loop can't be though.
+    for j in (0..height).rev() {
         for i in 0..width {
             let mut color = Colors::Black.value();
-            for _ in 0..samples_per_pixel {                
+            for _ in 0..samples_per_pixel {
                 let x: f64 = rng.gen();
                 let u = ((i as f64) + x) / w;
                 let y: f64 = rng.gen();
                 let v = ((j as f64) + y) / h;
                 let r = camera.get_ray(u, v);
-                color += compute_ray_color(r, &world, max_depth);            
+                color += compute_ray_color(r, &world, max_depth);
             }
 
             let pixel = color.sample_pixel(samples_per_pixel as u32);

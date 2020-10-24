@@ -3,18 +3,15 @@ use crate::material::Material;
 use crate::ray::Ray;
 // use std::rc::Rc;
 
-
 #[derive(Debug)]
 pub enum Shape {
-    Sphere(Point3, f64, Material),    
+    Sphere(Point3, f64, Material),
 }
-
-
 
 impl Hittable for Shape {
     fn get_material<'a>(&'a self) -> &'a Material {
         match self {
-            Shape::Sphere(_center, _radius, material) => material,            
+            Shape::Sphere(_center, _radius, material) => material,
         }
     }
 
@@ -50,7 +47,7 @@ impl Hittable for Shape {
                 }
 
                 None
-            },
+            }
         }
     }
 }
@@ -68,13 +65,7 @@ pub struct Intersection<'a> {
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new(
-        r: &Ray,
-        t: f64,
-        p: Point3,
-        normal: Vector3,
-        object: &'a Shape,
-    ) -> Intersection<'a> {
+    pub fn new(r: &Ray, t: f64, p: Point3, normal: Vector3, object: &'a Shape) -> Intersection<'a> {
         // which side of object did ray hit?
         let ray_hit_outer_surface = r.direction.dot(&normal) < 0.0;
         let new_normal = if ray_hit_outer_surface {
@@ -101,13 +92,13 @@ pub trait Hittable {
 pub struct HittableObjects {
     // The HittableObjects list will own its objects, so no lifetime
     // parameter needed
-    pub objects: Vec<Shape>
+    pub objects: Vec<Shape>,
 }
 
 impl HittableObjects {
     pub fn new() -> HittableObjects {
         HittableObjects {
-            objects: Vec::new()
+            objects: Vec::new(),
         }
     }
 
@@ -123,7 +114,7 @@ impl HittableObjects {
     pub fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         let mut closest_intersection: Option<Intersection> = None;
         let mut closest_hit = t_max;
-    
+
         for object in self.objects.iter() {
             let intersection = object.hit(r, t_min, t_max);
             match intersection {
@@ -136,7 +127,7 @@ impl HittableObjects {
                 None => {}
             }
         }
-    
+
         return closest_intersection;
     }
 }

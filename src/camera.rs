@@ -53,7 +53,7 @@ impl Camera {
         let origin = look_from;
         let horizontal = focus_dist * viewport_width * u;
         let vertical = focus_dist * viewport_height * v;
-        
+
         let lower_left_corner =
             origin.to_vector() - 0.5 * horizontal - 0.5 * vertical - focus_dist * w;
         let lens_radius = aperture / 2.0;
