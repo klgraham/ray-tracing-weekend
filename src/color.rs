@@ -1,6 +1,7 @@
 use rand::prelude::*;
 use std::cmp::PartialEq;
 use std::ops::{Add, AddAssign, Mul, Sub};
+use std::iter::Sum;
 
 // color.rs
 
@@ -108,6 +109,18 @@ impl Add for Color {
     }
 }
 
+impl<'a> Add<&'a Color> for Color {
+    type Output = Color;
+
+    fn add(self, other: &Color) -> Color {
+        Color::new(
+            self.red + other.red,
+            self.green + other.green,
+            self.blue + other.blue,
+        )
+    }
+}
+
 /// Color addition, with assignment
 impl AddAssign<Color> for Color {
     fn add_assign(&mut self, other: Color) {
@@ -158,6 +171,12 @@ impl Mul<Color> for Color {
             self.green * other.green,
             self.blue * other.blue,
         )
+    }
+}
+
+impl<'a> Sum<&'a Color> for Color {
+    fn sum<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
+        iter.fold(Colors::Black.value(), Color::add)
     }
 }
 

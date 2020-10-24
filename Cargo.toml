@@ -12,5 +12,6 @@ opt-level = 3
 [dependencies]
 rand = "0.7.3"
 pbr = "1.0.3"
+rayon = "1.5.0"
 
 

@@ -17,8 +17,8 @@ use geom::*;
 use material::Material;
 use ray::Ray;
 use shapes::{Hittable, HittableObjects, Shape};
-// use std::sync::{Arc, Mutex};
-// use std::thread;
+use rayon::prelude::*;
+
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
 /// basically be an xy-plane, where the origin is in the lower left corner,
@@ -129,7 +129,7 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
 fn main() {
     // Image
     let aspect_ratio: f64 = 16.0 / 9.0;
-    let height: usize = 480;
+    let height: usize = 1080;
     let width: usize = ((height as f64) * aspect_ratio) as usize;
     let samples_per_pixel: usize = 500;
     let max_depth: i32 = 50;
@@ -169,22 +169,18 @@ fn main() {
     let h = (height as f64) - 1.0;
 
     let mut progress_bar = ProgressBar::new(height as u64);
-    let mut rng = rand::thread_rng();
 
     // Note that the height coordinate is written backwards
     // Should be able to parallelize the i and j loops. The sampling loop can't be though.
     for j in (0..height).rev() {
         for i in 0..width {
-            let mut color = Colors::Black.value();
-            for _ in 0..samples_per_pixel {
-                let x: f64 = rng.gen();
-                let u = ((i as f64) + x) / w;
-                let y: f64 = rng.gen();
-                let v = ((j as f64) + y) / h;
-                let r = camera.get_ray(u, v);
-                color += compute_ray_color(r, &world, max_depth);
-            }
-
+            let samples: Vec<usize> = (0..samples_per_pixel).collect();
+            let color = samples.par_iter()
+                .map(|_| sample_pixel(i, j, &camera, &world, max_depth, w, h))
+                .collect::<Vec<Color>>()
+                .iter()
+                .sum::<Color>();
+            
             let pixel = color.sample_pixel(samples_per_pixel as u32);
             binary_pixels.push(pixel.0);
             binary_pixels.push(pixel.1);
@@ -195,4 +191,14 @@ fn main() {
     progress_bar.finish_print("Done.");
     file.write(&binary_pixels)
         .expect("Failed to write color map to PPM.");
+}
+
+
+fn sample_pixel(i: usize, j: usize, camera: &Camera, world: &World, max_depth: i32, w: f64, h: f64) -> Color {
+    let x = rand::thread_rng().gen::<f64>();
+    let u = ((i as f64) + x) / w;
+    let y = rand::thread_rng().gen::<f64>();;
+    let v = ((j as f64) + y) / h;
+    let r = camera.get_ray(u, v);
+    return compute_ray_color(r, world, max_depth);
 }
