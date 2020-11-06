@@ -5,20 +5,48 @@ use crate::ray::Ray;
 
 #[derive(Debug)]
 pub enum Shape {
-    Sphere(Point3, f64, Material),
+    Sphere(Point3, f64, Point3, f64, f64, Material),
+}
+
+pub fn make_sphere(center: Point3, radius: f64, material: Material) -> Shape {
+    Shape::Sphere(center, 0f64, center, 0f64, radius, material)
+}
+
+/// Sphere with center that can move linearly from center0 at time0 to center1 at time1.
+pub fn make_moving_sphere(
+    center0: Point3,
+    time0: f64,
+    center1: Point3,
+    time1: f64,
+    radius: f64,
+    material: Material,
+) -> Shape {
+    Shape::Sphere(center0, time0, center1, time1, radius, material)
+}
+
+impl Shape {
+    pub fn center(&self, time: f64) -> Point3 {
+        match self {
+            Shape::Sphere(center0, time0, center1, time1, _radius, _material) => {
+                let r = (time - time0) / (time1 - time0);
+                return *center0 + r * (*center1 - *center0);
+            }
+        }
+    }
 }
 
 impl Hittable for Shape {
     fn get_material<'a>(&'a self) -> &'a Material {
         match self {
-            Shape::Sphere(_center, _radius, material) => material,
+            Shape::Sphere(_center0, _time0, _center1, _time1, _radius, material) => material,
         }
     }
 
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         match self {
-            Shape::Sphere(center, radius, _material) => {
-                let oc = r.origin - *center;
+            Shape::Sphere(center0, _time0, _center1, _time1, radius, _material) => {
+                let center_at_time = self.center(r.time);
+                let oc = r.origin - center_at_time;
                 let a = r.direction.length_squared();
                 let half_b = r.direction.dot(&oc);
                 let c = oc.length_squared() - radius * radius;
@@ -31,8 +59,8 @@ impl Hittable for Shape {
                     if t < t_max && t > t_min {
                         // point where ray hits sphere
                         let p = r.at(t);
-                        let normal: Vector3 = (p - *center) / *radius;
-                        let intersection = Intersection::new(&r, t, p, normal, self);
+                        let outward_normal: Vector3 = (p - center_at_time) / *radius;
+                        let intersection = Intersection::new(&r, t, p, outward_normal, self);
                         return Some(intersection);
                     }
 
@@ -40,8 +68,8 @@ impl Hittable for Shape {
                     if t < t_max && t > t_min {
                         // point where ray hits sphere
                         let p = r.at(t);
-                        let normal: Vector3 = (p - *center) / *radius;
-                        let intersection = Intersection::new(&r, t, p, normal, self);
+                        let outward_normal: Vector3 = (p - center_at_time) / *radius;
+                        let intersection = Intersection::new(&r, t, p, outward_normal, self);
                         return Some(intersection);
                     }
                 }

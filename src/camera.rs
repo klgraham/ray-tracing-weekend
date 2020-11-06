@@ -1,5 +1,6 @@
 use crate::geom::{random_in_unit_disk, Point3, Vector3};
 use crate::ray::Ray;
+use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -7,16 +8,6 @@ pub struct Camera {
     // This position is relative to the center of the screen. So, to get to the
     // eye from the center, you go left and down by one half and then move
     // towards the eye by focal length.
-    /// vertical field-of-view, in degrees
-    // vertical_fov: f64,
-    // aspect_ratio: f64,
-    // aperture: f64,
-    // focus_dist: f64,
-    // theta: f64,
-    // h: f64,
-    // viewport_height: f64,
-    // viewport_width: f64,
-    // focal_length: f64,
     origin: Point3,
     lower_left_corner: Vector3,
     horizontal: Vector3,
@@ -25,6 +16,8 @@ pub struct Camera {
     v: Vector3,
     w: Vector3,
     lens_radius: f64,
+    time0: f64,
+    time1: f64,
 }
 
 fn degrees_to_radians(degrees: f64) -> f64 {
@@ -40,6 +33,10 @@ impl Camera {
         aspect_ratio: f64,
         aperture: f64,
         focus_dist: f64,
+        // shutter open time
+        time0: f64,
+        // shutter close time
+        time1: f64,
     ) -> Camera {
         let theta = degrees_to_radians(vertical_fov);
         let h = (theta / 2.0).tan();
@@ -67,6 +64,8 @@ impl Camera {
             v,
             w,
             lens_radius,
+            time0,
+            time1,
         }
     }
 
@@ -76,6 +75,7 @@ impl Camera {
         let direction = self.lower_left_corner - self.origin.to_vector() - offset
             + s * self.horizontal
             + t * self.vertical;
-        return Ray::new(self.origin + offset, direction);
+        let time: f64 = thread_rng().gen_range(self.time0, self.time1);
+        return Ray::new_with_time(self.origin + offset, direction, time);
     }
 }

@@ -6,12 +6,26 @@ use crate::geom::{Point3, Vector3};
 pub struct Ray {
     pub origin: Point3,
     pub direction: Vector3,
+    pub time: f64,
 }
 
 impl Ray {
+    /// Creates a ray at `origin` along direction `direction`, at time `time`
+    pub fn new_with_time(origin: Point3, direction: Vector3, time: f64) -> Ray {
+        Ray {
+            origin,
+            direction,
+            time,
+        }
+    }
+
     /// Creates a ray at `origin` along direction `direction`
     pub fn new(origin: Point3, direction: Vector3) -> Ray {
-        Ray { origin, direction }
+        Ray {
+            origin,
+            direction,
+            time: 0f64,
+        }
     }
 
     /// Gives the ray at `t`.

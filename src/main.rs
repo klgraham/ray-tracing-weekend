@@ -1,5 +1,5 @@
 use pbr::ProgressBar;
-use rand::prelude::*;
+use rand::{thread_rng, Rng};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -16,9 +16,8 @@ use color::{Color, Colors};
 use geom::*;
 use material::Material;
 use ray::Ray;
-use shapes::{Hittable, HittableObjects, Shape};
 use rayon::prelude::*;
-
+use shapes::{make_sphere, Hittable, HittableObjects, Shape};
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
 /// basically be an xy-plane, where the origin is in the lower left corner,
@@ -34,13 +33,13 @@ fn make_random_scene() -> World {
     let mut objects = HittableObjects::new();
 
     let ground_material = Material::DiffuseNonMetal(Color::new(0.5, 0.5, 0.5));
-    objects.add(Shape::Sphere(
+    objects.add(make_sphere(
         Point3::new(0., -1000., 0.),
         1000.,
         ground_material,
     ));
 
-    let mut rng = rand::thread_rng();
+    let mut rng = thread_rng();
 
     for a in -11..11 {
         for b in -11..11 {
@@ -56,41 +55,41 @@ fn make_random_scene() -> World {
                     // dielectric => cinnabar
                     let cinnabar = Color::new(0.73, 0.27, 0.21);
                     let sphere_material = Material::Dielectric(3.02, cinnabar);
-                    objects.add(Shape::Sphere(center, 0.1, sphere_material));
+                    objects.add(make_sphere(center, 0.1, sphere_material));
                 } else if p_material < 0.2 {
                     // dielectric => diamond
                     let diamond = Color::new(0.78, 0.88, 0.91);
                     let sphere_material = Material::Dielectric(3.02, diamond);
-                    objects.add(Shape::Sphere(center, 0.1, sphere_material));
+                    objects.add(make_sphere(center, 0.1, sphere_material));
                 } else if p_material < 0.8 {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Material::DiffuseNonMetal(albedo);
-                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
+                    objects.add(make_sphere(center, 0.2, sphere_material));
                 } else if p_material < 0.95 {
                     // metal
                     let albedo = Color::random();
                     let fuzz: f64 = rng.gen_range(0., 0.5);
                     let sphere_material = Material::Metal(albedo, fuzz);
-                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
+                    objects.add(make_sphere(center, 0.2, sphere_material));
                 } else {
                     // dielectric
                     let sphere_material = Material::Dielectric(1.5, Colors::White.value());
-                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
+                    objects.add(make_sphere(center, 0.2, sphere_material));
                 }
             }
         }
     }
 
     let material1 = Material::Dielectric(1.5, Colors::White.value());
-    objects.add(Shape::Sphere(Point3::new(0., 1., 0.), 1., material1));
+    objects.add(make_sphere(Point3::new(0., 1., 0.), 1., material1));
 
     let albedo = Color::new(0.4, 0.2, 0.1);
     let material2 = Material::DiffuseNonMetal(albedo);
-    objects.add(Shape::Sphere(Point3::new(-4., 1., 0.), 1., material2));
+    objects.add(make_sphere(Point3::new(-4., 1., 0.), 1., material2));
 
     let material3 = Material::Metal(Color::new(0.7, 0.6, 0.5), 0.);
-    objects.add(Shape::Sphere(Point3::new(4., 1., 0.), 1., material3));
+    objects.add(make_sphere(Point3::new(4., 1., 0.), 1., material3));
 
     return World { objects };
 }
@@ -152,6 +151,8 @@ fn main() {
         aspect_ratio,
         aperture,
         dist_to_focus,
+        0f64,
+        0f64,
     );
 
     // Render
@@ -175,12 +176,13 @@ fn main() {
     for j in (0..height).rev() {
         for i in 0..width {
             let samples: Vec<usize> = (0..samples_per_pixel).collect();
-            let color = samples.par_iter()
+            let color = samples
+                .par_iter()
                 .map(|_| sample_pixel(i, j, &camera, &world, max_depth, w, h))
                 .collect::<Vec<Color>>()
                 .iter()
                 .sum::<Color>();
-            
+
             let pixel = color.sample_pixel(samples_per_pixel as u32);
             binary_pixels.push(pixel.0);
             binary_pixels.push(pixel.1);
@@ -193,11 +195,18 @@ fn main() {
         .expect("Failed to write color map to PPM.");
 }
 
-
-fn sample_pixel(i: usize, j: usize, camera: &Camera, world: &World, max_depth: i32, w: f64, h: f64) -> Color {
-    let x = rand::thread_rng().gen::<f64>();
+fn sample_pixel(
+    i: usize,
+    j: usize,
+    camera: &Camera,
+    world: &World,
+    max_depth: i32,
+    w: f64,
+    h: f64,
+) -> Color {
+    let x = thread_rng().gen::<f64>();
     let u = ((i as f64) + x) / w;
-    let y = rand::thread_rng().gen::<f64>();;
+    let y = thread_rng().gen::<f64>();
     let v = ((j as f64) + y) / h;
     let r = camera.get_ray(u, v);
     return compute_ray_color(r, world, max_depth);
