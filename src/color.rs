@@ -1,7 +1,7 @@
 use rand::prelude::*;
 use std::cmp::PartialEq;
-use std::ops::{Add, AddAssign, Mul, Sub};
 use std::iter::Sum;
+use std::ops::{Add, AddAssign, Mul, Sub};
 
 // color.rs
 

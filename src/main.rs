@@ -16,9 +16,8 @@ use color::{Color, Colors};
 use geom::*;
 use material::Material;
 use ray::Ray;
-use shapes::{Hittable, HittableObjects, Shape};
 use rayon::prelude::*;
-
+use shapes::{Hittable, HittableObjects, Shape};
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
 /// basically be an xy-plane, where the origin is in the lower left corner,
@@ -70,7 +69,7 @@ fn make_random_scene() -> World {
                 } else if p_material < 0.95 {
                     // metal
                     let albedo = Color::random();
-                    let fuzz: f64 = rng.gen_range(0., 0.5);
+                    let fuzz: f64 = rng.gen_range(0. ..0.5);
                     let sphere_material = Material::Metal(albedo, fuzz);
                     objects.add(Shape::Sphere(center, 0.2, sphere_material));
                 } else {
@@ -175,12 +174,13 @@ fn main() {
     for j in (0..height).rev() {
         for i in 0..width {
             let samples: Vec<usize> = (0..samples_per_pixel).collect();
-            let color = samples.par_iter()
+            let color = samples
+                .par_iter()
                 .map(|_| sample_pixel(i, j, &camera, &world, max_depth, w, h))
                 .collect::<Vec<Color>>()
                 .iter()
                 .sum::<Color>();
-            
+
             let pixel = color.sample_pixel(samples_per_pixel as u32);
             binary_pixels.push(pixel.0);
             binary_pixels.push(pixel.1);
@@ -193,11 +193,18 @@ fn main() {
         .expect("Failed to write color map to PPM.");
 }
 
-
-fn sample_pixel(i: usize, j: usize, camera: &Camera, world: &World, max_depth: i32, w: f64, h: f64) -> Color {
+fn sample_pixel(
+    i: usize,
+    j: usize,
+    camera: &Camera,
+    world: &World,
+    max_depth: i32,
+    w: f64,
+    h: f64,
+) -> Color {
     let x = rand::thread_rng().gen::<f64>();
     let u = ((i as f64) + x) / w;
-    let y = rand::thread_rng().gen::<f64>();;
+    let y = rand::thread_rng().gen::<f64>();
     let v = ((j as f64) + y) / h;
     let r = camera.get_ray(u, v);
     return compute_ray_color(r, world, max_depth);
