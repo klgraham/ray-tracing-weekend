@@ -5,6 +5,7 @@ use std::ops::{Add, AddAssign, Mul, Sub};
 
 // color.rs
 
+/// RGB color
 #[derive(Debug, PartialEq)]
 pub struct Color {
     pub red: f64,
@@ -65,22 +66,18 @@ impl Color {
 
 /// Clamps a color component to [0, 255]
 fn clamp_pixel(c: f64) -> u8 {
-    if c > 1.0f64 {
-        return 255u8;
-    } else if c < 0f64 {
-        return 0u8;
-    } else {
-        return (255.0 * c).round() as u8;
+    match c {
+        c if c > 1.0f64 => 255u8,
+        c if c < 0f64 => 0u8,
+        _ => (255.0 * c).round() as u8,
     }
 }
 
 fn clamp_pixel2(x: f64, x_min: f64, x_max: f64) -> f64 {
-    if x < x_min {
-        return x_min;
-    } else if x > x_max {
-        return x_max;
-    } else {
-        return x;
+    match x {
+        x if x < x_min => x_min,
+        x if x > x_max => x_max,
+        _ => x,
     }
 }
 
