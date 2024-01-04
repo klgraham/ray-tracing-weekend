@@ -19,7 +19,7 @@ pub enum Material {
 fn dielectric_reflectance(cosine: f64, ref_index: f64) -> f64 {
     let mut r0 = (1.0 - ref_index) / (1.0 + ref_index);
     r0 *= r0;
-    return r0 + (1.0 - r0) * (1.0 - cosine).powi(5);
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }
 
 impl Material {
@@ -28,7 +28,7 @@ impl Material {
             Material::DiffuseNonMetal(albedo) => {
                 let scatter_direction = intersect.normal + random_unit_vector();
                 let scattered_ray = Ray::new(intersect.p, scatter_direction);
-                return Some((scattered_ray, albedo));
+                Some((scattered_ray, albedo))
             }
 
             Material::Metal(albedo, fuzz) => {

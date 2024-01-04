@@ -29,7 +29,7 @@ impl Point3 {
         Point3::new(0.0, 0.0, 0.0)
     }
 
-    pub fn to_vector(&self) -> Vector3 {
+    pub fn as_vector(&self) -> Vector3 {
         Vector3::new(self.x, self.y, self.z)
     }
 }
@@ -65,15 +65,15 @@ impl Vector3 {
     pub fn cross(&self, other: &Vector3) -> Self {
         let (x, y, z) = (other.x, other.y, other.z);
         Vector3::new(
-            self.y * &z - self.z * &y,
-            self.z * &x - self.x * &z,
-            self.x * &y - self.y * &x,
+            self.y * z - self.z * y,
+            self.z * x - self.x * z,
+            self.x * y - self.y * x,
         )
     }
 
     /// Reflects vector against a surface with normal vector `n`
     pub fn reflect(&self, n: &Vector3) -> Vector3 {
-        return *self - (2.0 * self.dot(n)) * (*n);
+        *self - (2.0 * self.dot(n)) * (*n)
     }
 
     /// Refraction via Snell's law
@@ -82,7 +82,7 @@ impl Vector3 {
         let r_out_perpendicular: Vector3 = etai_over_etat * (*self + cos_theta * (*n));
         let r_out_parallel: Vector3 =
             (1.0 - r_out_perpendicular.length_squared()).abs().sqrt() * -(*n);
-        return r_out_perpendicular + r_out_parallel;
+        r_out_perpendicular + r_out_parallel
     }
 }
 
@@ -115,9 +115,8 @@ pub fn random_in_hemisphere(normal: &Vector3) -> Vector3 {
     if normal.dot(&in_unit_sphere) > 0.0 {
         // random vector in same hemisphere as normal
         return in_unit_sphere;
-    } else {
-        return -in_unit_sphere;
     }
+    -in_unit_sphere
 }
 
 pub fn random_in_unit_disk() -> Vector3 {

@@ -9,7 +9,7 @@ pub enum Shape {
 }
 
 impl Hittable for Shape {
-    fn get_material<'a>(&'a self) -> &'a Material {
+    fn get_material(&self) -> &Material {
         match self {
             Shape::Sphere(_center, _radius, material) => material,
         }
@@ -32,7 +32,7 @@ impl Hittable for Shape {
                         // point where ray hits sphere
                         let p = r.at(t);
                         let normal: Vector3 = (p - *center) / *radius;
-                        let intersection = Intersection::new(&r, t, p, normal, self);
+                        let intersection = Intersection::new(r, t, p, normal, self);
                         return Some(intersection);
                     }
 
@@ -41,7 +41,7 @@ impl Hittable for Shape {
                         // point where ray hits sphere
                         let p = r.at(t);
                         let normal: Vector3 = (p - *center) / *radius;
-                        let intersection = Intersection::new(&r, t, p, normal, self);
+                        let intersection = Intersection::new(r, t, p, normal, self);
                         return Some(intersection);
                     }
                 }
@@ -84,8 +84,8 @@ impl<'a> Intersection<'a> {
 }
 
 pub trait Hittable {
-    fn get_material<'a>(&'a self) -> &'a Material;
-    /// Returns the interesction between a ray a shape, if there is one
+    fn get_material(&self) -> &Material;
+    /// Returns the intersction between a ray and a shape, if there is one
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
 }
 
@@ -116,19 +116,15 @@ impl HittableObjects {
         let mut closest_hit = t_max;
 
         for object in self.objects.iter() {
-            let intersection = object.hit(r, t_min, t_max);
-            match intersection {
-                Some(intersect) => {
-                    if intersect.t < closest_hit {
-                        closest_hit = intersect.t;
-                        closest_intersection = Some(intersect);
-                    }
+            let maybe_intersection = object.hit(r, t_min, t_max);
+            if let Some(intersection) = maybe_intersection {
+                if intersection.t < closest_hit {
+                    closest_hit = intersection.t;
+                    closest_intersection = Some(intersection);
                 }
-                None => {}
             }
         }
-
-        return closest_intersection;
+        closest_intersection
     }
 }
 

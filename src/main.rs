@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
+mod canvas;
 mod camera;
 mod color;
 mod geom;
@@ -12,6 +13,7 @@ mod ray;
 mod shapes;
 
 use camera::Camera;
+use canvas::Resolution;
 use color::{Color, Colors};
 use geom::*;
 use material::Material;
@@ -91,7 +93,7 @@ fn make_random_scene() -> World {
     let material3 = Material::Metal(Color::new(0.7, 0.6, 0.5), 0.);
     objects.add(Shape::Sphere(Point3::new(4., 1., 0.), 1., material3));
 
-    return World { objects };
+    World { objects }
 }
 
 fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
@@ -109,9 +111,9 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
 
             match ray_and_color {
                 Some((scattered_ray, attenuation)) => {
-                    return attenuation.mult(compute_ray_color(scattered_ray, world, depth - 1));
+                    attenuation.mult(compute_ray_color(scattered_ray, world, depth - 1))
                 }
-                None => return Colors::Black.value(),
+                None => Colors::Black.value(),
             }
         }
         None => {
@@ -120,7 +122,7 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
             let t = 0.5 * (ray_direction.y + 1.0);
             // linear interpolation between while and a light blue, based on y-component of ray
             // blendedValue = (1−t)*startValue + t * endValue
-            return (1.0 - t) * Colors::White.value() + t * Color::new(0.5, 0.7, 1.0);
+            (1.0 - t) * Colors::White.value() + t * Color::new(0.5, 0.7, 1.0)
         }
     }
 }
@@ -128,7 +130,7 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
 fn main() {
     // Image
     let aspect_ratio: f64 = 16.0 / 9.0;
-    let height: usize = 1080;
+    let height = Resolution::_240p.height();
     let width: usize = ((height as f64) * aspect_ratio) as usize;
     let samples_per_pixel: usize = 500;
     let max_depth: i32 = 50;
@@ -160,7 +162,7 @@ fn main() {
     let mut file = File::create(path).expect("Failed to create file.");
 
     let header = format!("P6\n{} {}\n255\n", width, height);
-    file.write(header.as_bytes())
+    file.write_all(header.as_bytes())
         .expect("Failed to write PPM header.");
 
     let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
@@ -189,7 +191,7 @@ fn main() {
         progress_bar.inc();
     }
     progress_bar.finish_print("Done.");
-    file.write(&binary_pixels)
+    file.write_all(&binary_pixels)
         .expect("Failed to write color map to PPM.");
 }
 
@@ -207,5 +209,5 @@ fn sample_pixel(
     let y = rand::thread_rng().gen::<f64>();
     let v = ((j as f64) + y) / h;
     let r = camera.get_ray(u, v);
-    return compute_ray_color(r, world, max_depth);
+    compute_ray_color(r, world, max_depth)
 }

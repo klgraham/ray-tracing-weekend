@@ -55,7 +55,7 @@ impl Camera {
         let vertical = focus_dist * viewport_height * v;
 
         let lower_left_corner =
-            origin.to_vector() - 0.5 * horizontal - 0.5 * vertical - focus_dist * w;
+            origin.as_vector() - 0.5 * horizontal - 0.5 * vertical - focus_dist * w;
         let lens_radius = aperture / 2.0;
 
         Camera {
@@ -73,9 +73,9 @@ impl Camera {
     pub fn get_ray(&self, s: f64, t: f64) -> Ray {
         let rd = self.lens_radius * random_in_unit_disk();
         let offset = self.u * rd.x + self.v * rd.y;
-        let direction = self.lower_left_corner - self.origin.to_vector() - offset
+        let direction = self.lower_left_corner - self.origin.as_vector() - offset
             + s * self.horizontal
             + t * self.vertical;
-        return Ray::new(self.origin + offset, direction);
+        Ray::new(self.origin + offset, direction)
     }
 }
