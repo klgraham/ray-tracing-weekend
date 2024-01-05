@@ -15,7 +15,7 @@ mod shapes;
 
 use camera::Camera;
 use canvas::Resolution;
-use color::{Color, Colors};
+use color::Color;
 use geom::*;
 use material::Material;
 use ray::Ray;
@@ -53,24 +53,20 @@ struct World {
 fn select_material(p_material: f64, rng: &mut ThreadRng) -> Material {
     if p_material < 0.1 {
         // dielectric => cinnabar
-        let cinnabar = Color::new(0.73, 0.27, 0.21);
-        Material::Dielectric(3.02, cinnabar)
+        Material::Dielectric(3.02, Color::CINNABAR)
     } else if p_material < 0.2 {
         // dielectric => diamond
-        let diamond = Color::new(0.78, 0.88, 0.91);
-        Material::Dielectric(3.02, diamond)
+        Material::Dielectric(3.02, Color::DIAMOND)
     } else if p_material < 0.8 {
-        // diffuse
-        let albedo = Color::random() * Color::random();
-        Material::DiffuseNonMetal(albedo)
+        // diffuse non-metal
+        Material::DiffuseNonMetal(Color::diffuse_albedo())
     } else if p_material < 0.95 {
         // metal
-        let albedo = Color::random();
         let fuzz: f64 = rng.gen_range(0. ..0.5);
-        Material::Metal(albedo, fuzz)
+        Material::Metal(Color::metal_albedo(), fuzz)
     } else {
         // dielectric
-        Material::Dielectric(1.5, Colors::White.value())
+        Material::Dielectric(1.5, Color::WHITE)
     }
 }
 
@@ -102,7 +98,7 @@ fn make_random_scene() -> World {
         }
     }
 
-    let material1 = Material::Dielectric(1.5, Colors::White.value());
+    let material1 = Material::Dielectric(1.5, Color::WHITE);
     objects.add(Shape::Sphere(Point3::new(0., 1., 0.), 1., material1));
 
     let albedo = Color::new(0.4, 0.2, 0.1);
@@ -118,7 +114,7 @@ fn make_random_scene() -> World {
 fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
     if depth <= 0 {
         // This gives us an end to the recursion.
-        return Colors::Black.value();
+        return Color::BLACK;
     }
 
     let intersection = world.objects.hit(&r, 1e-3, f64::MAX);
@@ -132,7 +128,7 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
                 Some((scattered_ray, attenuation)) => {
                     attenuation.mult(compute_ray_color(scattered_ray, world, depth - 1))
                 }
-                None => Colors::Black.value(),
+                None => Color::BLACK,
             }
         }
         None => {
@@ -141,7 +137,7 @@ fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
             let t = 0.5 * (ray_direction.y + 1.0);
             // linear interpolation between while and a light blue, based on y-component of ray
             // blendedValue = (1−t)*startValue + t * endValue
-            (1.0 - t) * Colors::White.value() + t * Color::new(0.5, 0.7, 1.0)
+            (1.0 - t) * Color::WHITE + t * Color::new(0.5, 0.7, 1.0)
         }
     }
 }

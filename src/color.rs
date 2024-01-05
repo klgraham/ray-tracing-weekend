@@ -13,16 +13,6 @@ pub struct Color {
     pub blue: f64,
 }
 
-/// Constant colors
-#[derive(Debug, PartialEq)]
-pub enum Colors {
-    Red,
-    Green,
-    Blue,
-    Black,
-    White,
-}
-
 impl Color {
     pub fn new(red: f64, green: f64, blue: f64) -> Self {
         Color { red, green, blue }
@@ -62,6 +52,22 @@ impl Color {
         let mut rng = rand::thread_rng();
         Color::new(rng.gen(), rng.gen(), rng.gen())
     }
+
+    pub const RED: Self = Self { red: 1.0, green: 0.0, blue: 0.0 };
+    pub const GREEN: Self = Self { red: 0.0, green: 1.0, blue: 0.0 };
+    pub const BLUE: Self = Self { red: 0.0, green: 0.0, blue: 1.0 };
+    pub const BLACK: Self = Self { red: 0.0, green: 0.0, blue: 0.0 };
+    pub const WHITE: Self = Self { red: 1.0, green: 1.0, blue: 1.0 };
+    pub const CINNABAR: Self = Self { red: 0.73, green: 0.27, blue: 0.21 };
+    pub const DIAMOND: Self = Self { red: 0.78, green: 0.88, blue: 0.91 };
+
+    pub fn diffuse_albedo() -> Self {
+        Color::random() * Color::random()
+    }
+
+    pub fn metal_albedo() -> Self {
+        Color::random()
+    }
 }
 
 /// Clamps a color component to [0, 255]
@@ -78,18 +84,6 @@ fn clamp_pixel2(x: f64, x_min: f64, x_max: f64) -> f64 {
         x if x < x_min => x_min,
         x if x > x_max => x_max,
         _ => x,
-    }
-}
-
-impl Colors {
-    pub fn value(self) -> Color {
-        match self {
-            Colors::Red => Color::new(1.0, 0.0, 0.0),
-            Colors::Green => Color::new(0.0, 1.0, 0.0),
-            Colors::Blue => Color::new(0.0, 0.0, 1.0),
-            Colors::White => Color::new(1.0, 1.0, 1.0),
-            Colors::Black => Color::new(0.0, 0.0, 0.0),
-        }
     }
 }
 
@@ -173,14 +167,14 @@ impl Mul<Color> for Color {
 
 impl<'a> Sum<&'a Color> for Color {
     fn sum<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
-        iter.fold(Colors::Black.value(), Color::add)
+        iter.fold(Color::BLACK, Color::add)
     }
 }
 
 /// Tests
 #[cfg(test)]
 mod tests {
-    use super::{Color, Colors};
+    use super::Color;
     use crate::color::clamp_pixel;
 
     //    #[test]
@@ -190,20 +184,6 @@ mod tests {
     //        let c2 = Color::new(0.7, 0.1, 0.25);
     //        assert_eq!(c1 + c2, Color::new(1.6, 0.7, 1.0));
     //    }
-
-    #[test]
-    fn can_make_specific_colors() {
-        let red = Colors::Red;
-        let green = Colors::Green;
-        let blue = Colors::Blue;
-        let black = Colors::Black;
-        let white = Colors::White;
-        assert_eq!(red.value(), Color::new(1.0, 0.0, 0.0));
-        assert_eq!(green.value(), Color::new(0.0, 1.0, 0.0));
-        assert_eq!(blue.value(), Color::new(0.0, 0.0, 1.0));
-        assert_eq!(black.value(), Color::new(0.0, 0.0, 0.0));
-        assert_eq!(white.value(), Color::new(1.0, 1.0, 1.0));
-    }
 
     #[test]
     fn can_clamp_pixels() {
