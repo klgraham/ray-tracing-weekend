@@ -1,5 +1,6 @@
 use pbr::ProgressBar;
 use rand::prelude::*;
+use rand::rngs::ThreadRng;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -31,6 +32,48 @@ struct World {
     pub objects: HittableObjects,
 }
 
+/// Selects a material based on the provided probability and random number generator.
+///
+/// # Arguments
+///
+/// * `p_material` - A float representing the probability of selecting a particular material.
+/// * `rng` - A mutable reference to a ThreadRng instance for generating random numbers.
+///
+/// # Returns
+///
+/// * `Material` - The selected material.
+///
+/// # Example
+///
+/// ```
+/// let mut rng = rand::thread_rng();
+/// let p_material: f64 = rng.gen();
+/// let material = select_material(p_material, &mut rng);
+/// ```
+fn select_material(p_material: f64, rng: &mut ThreadRng) -> Material {
+    if p_material < 0.1 {
+        // dielectric => cinnabar
+        let cinnabar = Color::new(0.73, 0.27, 0.21);
+        Material::Dielectric(3.02, cinnabar)
+    } else if p_material < 0.2 {
+        // dielectric => diamond
+        let diamond = Color::new(0.78, 0.88, 0.91);
+        Material::Dielectric(3.02, diamond)
+    } else if p_material < 0.8 {
+        // diffuse
+        let albedo = Color::random() * Color::random();
+        Material::DiffuseNonMetal(albedo)
+    } else if p_material < 0.95 {
+        // metal
+        let albedo = Color::random();
+        let fuzz: f64 = rng.gen_range(0. ..0.5);
+        Material::Metal(albedo, fuzz)
+    } else {
+        // dielectric
+        Material::Dielectric(1.5, Colors::White.value())
+    }
+}
+
 fn make_random_scene() -> World {
     let mut objects = HittableObjects::new();
 
@@ -53,32 +96,8 @@ fn make_random_scene() -> World {
             let center = Point3::new(x, 0.2, z);
 
             if (center - Point3::new(4., 0.2, 0.)).norm() > 0.9 {
-                if p_material < 0.1 {
-                    // dielectric => cinnabar
-                    let cinnabar = Color::new(0.73, 0.27, 0.21);
-                    let sphere_material = Material::Dielectric(3.02, cinnabar);
-                    objects.add(Shape::Sphere(center, 0.1, sphere_material));
-                } else if p_material < 0.2 {
-                    // dielectric => diamond
-                    let diamond = Color::new(0.78, 0.88, 0.91);
-                    let sphere_material = Material::Dielectric(3.02, diamond);
-                    objects.add(Shape::Sphere(center, 0.1, sphere_material));
-                } else if p_material < 0.8 {
-                    // diffuse
-                    let albedo = Color::random() * Color::random();
-                    let sphere_material = Material::DiffuseNonMetal(albedo);
-                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
-                } else if p_material < 0.95 {
-                    // metal
-                    let albedo = Color::random();
-                    let fuzz: f64 = rng.gen_range(0. ..0.5);
-                    let sphere_material = Material::Metal(albedo, fuzz);
-                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
-                } else {
-                    // dielectric
-                    let sphere_material = Material::Dielectric(1.5, Colors::White.value());
-                    objects.add(Shape::Sphere(center, 0.2, sphere_material));
-                }
+                let sphere_material = select_material(p_material, &mut rng);
+                objects.add(Shape::Sphere(center, 0.2, sphere_material));
             }
         }
     }
