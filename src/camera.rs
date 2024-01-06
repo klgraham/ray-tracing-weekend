@@ -1,12 +1,11 @@
-use crate::canvas::{CanvasConfig, Resolution, ASPECT_RATIO};
+use crate::canvas::{CanvasConfig, Resolution};
 use crate::geom::{random_in_unit_disk, Point3, Vector3};
 use crate::ray::Ray;
-use crate::shapes::{HittableObjects};
+use crate::shapes::HittableObjects;
 use crate::color::Color;
 
 use pbr::ProgressBar;
 use rand::prelude::*;
-use rand::rngs::ThreadRng;
 use rayon::prelude::*;
 
 

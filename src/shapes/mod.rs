@@ -1,8 +1,8 @@
 use crate::color::Color;
 use crate::geom::{Point3, Vector3};
-use crate::material::Material;
+use crate::material::{Material, select_material};
 use crate::ray::Ray;
-// use std::rc::Rc;
+use rand::prelude::*;
 
 
 pub trait Hittable {
@@ -204,3 +204,44 @@ impl HittableObjects {
     }
 }
 
+pub fn make_random_scene<'a>() -> HittableObjects {
+    let mut objects = HittableObjects::new();
+
+    let ground_material = Material::DiffuseNonMetal(Color::new(0.5, 0.5, 0.5));
+    let mut sphere = Sphere::new(Point3::new(0., -1000., 0.), 1000., ground_material);
+    objects.add(Shape::Sphere(sphere));
+
+    let mut rng = rand::thread_rng();
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let p_material: f64 = rng.gen();
+            let i: f64 = rng.gen();
+            let k: f64 = rng.gen();
+            let x = (a as f64) + 0.9 * i;
+            let z = (b as f64) + 0.9 * k;
+            let center = Point3::new(x, 0.2, z);
+
+            if (center - Point3::new(4., 0.2, 0.)).norm() > 0.9 {
+                let sphere_material = select_material(p_material, &mut rng);
+                let sphere = Sphere::new(center, 0.2, sphere_material);
+                objects.add(Shape::Sphere(sphere));
+            }
+        }
+    }
+
+    let material1 = Material::Dielectric(1.5, Color::WHITE);
+    sphere = Sphere::new(Point3::new(0., 1., 0.), 1., material1);
+    objects.add(Shape::Sphere(sphere));
+
+    let albedo = Color::new(0.4, 0.2, 0.1);
+    let material2 = Material::DiffuseNonMetal(albedo);
+    sphere = Sphere::new(Point3::new(-4., 1., 0.), 1., material2);
+    objects.add(Shape::Sphere(sphere));
+
+    let material3 = Material::Metal(Color::new(0.7, 0.6, 0.5), 0.);
+    sphere = Sphere::new(Point3::new(4., 1., 0.), 1., material3);
+    objects.add(Shape::Sphere(sphere));
+
+    objects
+}

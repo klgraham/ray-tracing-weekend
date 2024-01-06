@@ -1,12 +1,14 @@
 use crate::color::*;
 use crate::geom::*;
 use crate::ray::Ray;
-/// Different types of material
-///
-/// A matrial will produce a scattered ray (or say it absorbed the incident ray).
-/// If scattered, say how much the ray should be attenuated.
 use crate::shapes::Intersection;
 use rand::prelude::*;
+use rand::rngs::ThreadRng;
+
+/// Different types of material
+///
+/// A material will produce a scattered ray (or say it absorbed the incident ray).
+/// If scattered, say how much the ray should be attenuated.
 
 #[derive(Debug, Clone, Copy)]
 pub enum Material {
@@ -72,5 +74,43 @@ impl Material {
                 Some((scattered_ray, attenuation))
             }
         }
+    }
+}
+
+/// Selects a material based on the provided probability and random number generator.
+///
+/// # Arguments
+///
+/// * `p_material` - A float representing the probability of selecting a particular material.
+/// * `rng` - A mutable reference to a ThreadRng instance for generating random numbers.
+///
+/// # Returns
+///
+/// * `Material` - The selected material.
+///
+/// # Example
+///
+/// ```
+/// let mut rng = rand::thread_rng();
+/// let p_material: f64 = rng.gen();
+/// let material = select_material(p_material, &mut rng);
+/// ```
+pub fn select_material(p_material: f64, rng: &mut ThreadRng) -> Material {
+    if p_material < 0.1 {
+        // dielectric => cinnabar
+        Material::Dielectric(3.02, Color::CINNABAR)
+    } else if p_material < 0.2 {
+        // dielectric => diamond
+        Material::Dielectric(3.02, Color::DIAMOND)
+    } else if p_material < 0.8 {
+        // diffuse non-metal
+        Material::DiffuseNonMetal(Color::diffuse_albedo())
+    } else if p_material < 0.95 {
+        // metal
+        let fuzz: f64 = rng.gen_range(0. ..0.5);
+        Material::Metal(Color::metal_albedo(), fuzz)
+    } else {
+        // dielectric
+        Material::Dielectric(1.5, Color::WHITE)
     }
 }
