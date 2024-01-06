@@ -6,7 +6,7 @@ use std::ops::{Add, AddAssign, Mul, Sub};
 // color.rs
 
 /// RGB color
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Color {
     pub red: f64,
     pub green: f64,
