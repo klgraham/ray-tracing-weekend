@@ -26,6 +26,10 @@ pub struct Sphere {
 //     material: Material,
 // }
 
+/// `Shape` represents a geometric shape in the scene which can be hit by rays.
+/// Using an enum gives us a Shape type without needing generics, which would
+/// make a list of Hittable objects need dyn
+
 #[derive(Debug, Copy, Clone)]
 pub enum Shape {
     Sphere(Sphere),
