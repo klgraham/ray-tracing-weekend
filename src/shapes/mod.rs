@@ -1,3 +1,4 @@
+use crate::color::Color;
 use crate::geom::{Point3, Vector3};
 use crate::material::Material;
 use crate::ray::Ray;
@@ -169,6 +170,37 @@ impl HittableObjects {
             }
         }
         closest_intersection
+    }
+
+    pub fn compute_ray_color(&self, r: Ray, depth: i32) -> Color {
+        if depth <= 0 {
+            // This gives us an end to the recursion.
+            return Color::BLACK;
+        }
+
+        let intersection = self.hit(&r, 1e-3, f64::MAX);
+
+        match intersection {
+            Some(intersect) => {
+                let intersection_material = intersect.material;
+                let ray_and_color = intersection_material.scatter(r, &intersect);
+
+                match ray_and_color {
+                    Some((scattered_ray, attenuation)) => {
+                        attenuation.mult(self.compute_ray_color(scattered_ray, depth - 1))
+                    }
+                    None => Color::BLACK,
+                }
+            }
+            None => {
+                let ray_direction = r.direction.to_unit_vector();
+                // y is [-1,1], so t is [0,1]
+                let t = 0.5 * (ray_direction.y + 1.0);
+                // linear interpolation between while and a light blue, based on y-component of ray
+                // blendedValue = (1−t)*startValue + t * endValue
+                (1.0 - t) * Color::WHITE + t * Color::new(0.5, 0.7, 1.0)
+            }
+        }
     }
 }
 

@@ -1,4 +1,3 @@
-use pbr::ProgressBar;
 use rand::prelude::*;
 use rand::rngs::ThreadRng;
 use std::fs::File;
@@ -13,13 +12,13 @@ mod material;
 mod ray;
 mod shapes;
 
-use camera::Camera;
-use canvas::Resolution;
+use camera::{Camera, RenderConfig};
+use canvas::{ASPECT_RATIO, Resolution};
 use color::Color;
 use geom::*;
 use material::Material;
 use ray::Ray;
-use rayon::prelude::*;
+
 use shapes::{HittableObjects, Shape, Sphere};
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
@@ -109,46 +108,13 @@ fn make_random_scene<'a>() -> HittableObjects {
     objects
 }
 
-fn compute_ray_color(r: Ray, objects: &HittableObjects, depth: i32) -> Color {
-    if depth <= 0 {
-        // This gives us an end to the recursion.
-        return Color::BLACK;
-    }
-
-    let intersection = objects.hit(&r, 1e-3, f64::MAX);
-
-    match intersection {
-        Some(intersect) => {
-            let intersection_material = intersect.material;
-            let ray_and_color = intersection_material.scatter(r, &intersect);
-
-            match ray_and_color {
-                Some((scattered_ray, attenuation)) => {
-                    attenuation.mult(compute_ray_color(scattered_ray, objects, depth - 1))
-                }
-                None => Color::BLACK,
-            }
-        }
-        None => {
-            let ray_direction = r.direction.to_unit_vector();
-            // y is [-1,1], so t is [0,1]
-            let t = 0.5 * (ray_direction.y + 1.0);
-            // linear interpolation between while and a light blue, based on y-component of ray
-            // blendedValue = (1−t)*startValue + t * endValue
-            (1.0 - t) * Color::WHITE + t * Color::new(0.5, 0.7, 1.0)
-        }
-    }
-}
 
 fn main() {
-    // Image
-    let aspect_ratio: f64 = 16.0 / 9.0;
-    let height = Resolution::_240p.height();
-    let width: usize = ((height as f64) * aspect_ratio) as usize;
+    let resolution = Resolution::_240p;
     let samples_per_pixel: usize = 500;
     let max_depth: i32 = 50;
+    let render_config = RenderConfig::new(resolution, samples_per_pixel, max_depth);
 
-    // World
     let objects = make_random_scene();
 
     // Camera
@@ -163,64 +129,26 @@ fn main() {
         look_at,
         view_up,
         20.0,
-        aspect_ratio,
+        ASPECT_RATIO,
         aperture,
         dist_to_focus,
     );
 
     // Render
-    // Render a PPM file in P6 format, P6 format is a little simpler than P3 format
-    let filename = format!("scene_{}p.ppm", height);
+
+    let binary_pixels = camera.render(&objects, render_config);
+
+    // Write pixels to PPM file in P6 format, P6 format is a little simpler than P3 format
+    let filename = format!("scene_{}p.ppm", render_config.height);
     let path = Path::new(&filename);
     let mut file = File::create(path).expect("Failed to create file.");
 
-    let header = format!("P6\n{} {}\n255\n", width, height);
+    let header = format!("P6\n{} {}\n255\n", render_config.width, render_config.height);
     file.write_all(header.as_bytes())
         .expect("Failed to write PPM header.");
 
-    let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
-    let w = (width as f64) - 1.0;
-    let h = (height as f64) - 1.0;
-
-    let mut progress_bar = ProgressBar::new(height as u64);
-
-    // Note that the height coordinate is written backwards
-    // Should be able to parallelize the i and j loops. The sampling loop can't be though.
-    for j in (0..height).rev() {
-        for i in 0..width {
-            let samples: Vec<usize> = (0..samples_per_pixel).collect();
-            let color = samples
-                .par_iter()
-                .map(|_| sample_pixel(i, j, &camera, &objects, max_depth, w, h))
-                .collect::<Vec<Color>>()
-                .iter()
-                .sum::<Color>();
-
-            let pixel = color.sample_pixel(samples_per_pixel as u32);
-            binary_pixels.push(pixel.0);
-            binary_pixels.push(pixel.1);
-            binary_pixels.push(pixel.2);
-        }
-        progress_bar.inc();
-    }
-    progress_bar.finish_print("Done.");
     file.write_all(&binary_pixels)
         .expect("Failed to write color map to PPM.");
 }
 
-fn sample_pixel(
-    i: usize,
-    j: usize,
-    camera: &Camera,
-    world: &HittableObjects,
-    max_depth: i32,
-    w: f64,
-    h: f64,
-) -> Color {
-    let x = rand::thread_rng().gen::<f64>();
-    let u = ((i as f64) + x) / w;
-    let y = rand::thread_rng().gen::<f64>();
-    let v = ((j as f64) + y) / h;
-    let r = camera.get_ray(u, v);
-    compute_ray_color(r, world, max_depth)
-}
+
