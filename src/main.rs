@@ -20,7 +20,7 @@ use geom::*;
 use material::Material;
 use ray::Ray;
 use rayon::prelude::*;
-use shapes::{Hittable, HittableObjects, Shape};
+use shapes::{HittableObjects, Shape, Sphere};
 
 /// The viewer's eye (the camera) will be at `(0,0,0)`. The screen will
 /// basically be an xy-plane, where the origin is in the lower left corner,
@@ -28,9 +28,6 @@ use shapes::{Hittable, HittableObjects, Shape};
 /// out of the screen. The endpoint of the ray on the screen (in the xy-plane)
 /// can be denoted with two offset vectors `u` and `v`.
 
-struct World {
-    pub objects: HittableObjects,
-}
 
 /// Selects a material based on the provided probability and random number generator.
 ///
@@ -70,15 +67,12 @@ fn select_material(p_material: f64, rng: &mut ThreadRng) -> Material {
     }
 }
 
-fn make_random_scene() -> World {
+fn make_random_scene<'a>() -> HittableObjects {
     let mut objects = HittableObjects::new();
 
     let ground_material = Material::DiffuseNonMetal(Color::new(0.5, 0.5, 0.5));
-    objects.add(Shape::Sphere(
-        Point3::new(0., -1000., 0.),
-        1000.,
-        ground_material,
-    ));
+    let mut sphere = Sphere::new(Point3::new(0., -1000., 0.), 1000., ground_material);
+    objects.add(Shape::Sphere(sphere));
 
     let mut rng = rand::thread_rng();
 
@@ -93,40 +87,44 @@ fn make_random_scene() -> World {
 
             if (center - Point3::new(4., 0.2, 0.)).norm() > 0.9 {
                 let sphere_material = select_material(p_material, &mut rng);
-                objects.add(Shape::Sphere(center, 0.2, sphere_material));
+                let sphere = Sphere::new(center, 0.2, sphere_material);
+                objects.add(Shape::Sphere(sphere));
             }
         }
     }
 
     let material1 = Material::Dielectric(1.5, Color::WHITE);
-    objects.add(Shape::Sphere(Point3::new(0., 1., 0.), 1., material1));
+    sphere = Sphere::new(Point3::new(0., 1., 0.), 1., material1);
+    objects.add(Shape::Sphere(sphere));
 
     let albedo = Color::new(0.4, 0.2, 0.1);
     let material2 = Material::DiffuseNonMetal(albedo);
-    objects.add(Shape::Sphere(Point3::new(-4., 1., 0.), 1., material2));
+    sphere = Sphere::new(Point3::new(-4., 1., 0.), 1., material2);
+    objects.add(Shape::Sphere(sphere));
 
     let material3 = Material::Metal(Color::new(0.7, 0.6, 0.5), 0.);
-    objects.add(Shape::Sphere(Point3::new(4., 1., 0.), 1., material3));
+    sphere = Sphere::new(Point3::new(4., 1., 0.), 1., material3);
+    objects.add(Shape::Sphere(sphere));
 
-    World { objects }
+    objects
 }
 
-fn compute_ray_color(r: Ray, world: &World, depth: i32) -> Color {
+fn compute_ray_color(r: Ray, objects: &HittableObjects, depth: i32) -> Color {
     if depth <= 0 {
         // This gives us an end to the recursion.
         return Color::BLACK;
     }
 
-    let intersection = world.objects.hit(&r, 1e-3, f64::MAX);
+    let intersection = objects.hit(&r, 1e-3, f64::MAX);
 
     match intersection {
         Some(intersect) => {
-            let intersection_material = intersect.object.get_material();
+            let intersection_material = intersect.material;
             let ray_and_color = intersection_material.scatter(r, &intersect);
 
             match ray_and_color {
                 Some((scattered_ray, attenuation)) => {
-                    attenuation.mult(compute_ray_color(scattered_ray, world, depth - 1))
+                    attenuation.mult(compute_ray_color(scattered_ray, objects, depth - 1))
                 }
                 None => Color::BLACK,
             }
@@ -151,7 +149,7 @@ fn main() {
     let max_depth: i32 = 50;
 
     // World
-    let world = make_random_scene();
+    let objects = make_random_scene();
 
     // Camera
     let look_from = Point3::new(13., 2., 3.);
@@ -193,7 +191,7 @@ fn main() {
             let samples: Vec<usize> = (0..samples_per_pixel).collect();
             let color = samples
                 .par_iter()
-                .map(|_| sample_pixel(i, j, &camera, &world, max_depth, w, h))
+                .map(|_| sample_pixel(i, j, &camera, &objects, max_depth, w, h))
                 .collect::<Vec<Color>>()
                 .iter()
                 .sum::<Color>();
@@ -214,7 +212,7 @@ fn sample_pixel(
     i: usize,
     j: usize,
     camera: &Camera,
-    world: &World,
+    world: &HittableObjects,
     max_depth: i32,
     w: f64,
     h: f64,

@@ -8,7 +8,7 @@ use crate::ray::Ray;
 use crate::shapes::Intersection;
 use rand::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Material {
     DiffuseNonMetal(Color),
     Metal(Color, f64),
