@@ -1,9 +1,8 @@
 use crate::color::Color;
 use crate::geom::{Point3, Vector3};
-use crate::material::{Material, select_material};
+use crate::material::{select_material, Material};
 use crate::ray::Ray;
 use rand::prelude::*;
-
 
 pub trait Hittable {
     fn get_material(&self) -> &Material;
@@ -12,7 +11,6 @@ pub trait Hittable {
 }
 
 /// Shape structs
-
 
 #[derive(Debug, Copy, Clone)]
 pub struct Sphere {
@@ -35,7 +33,6 @@ pub struct Sphere {
 pub enum Shape {
     Sphere(Sphere),
     // Triangle(Triangle),
-
 }
 
 /// Records the details of a `Ray` hitting a `Hittable` shape (with
@@ -49,15 +46,18 @@ pub struct Intersection<'a> {
     pub normal: Vector3,
     pub ray_hit_outer_surface: bool,
     /// object that is hit by a ray
-    pub material: &'a Material,  // TODO: replace with material, since that's all we need for now?
+    pub material: &'a Material, // TODO: replace with material, since that's all we need for now?
 }
-
 
 /// Shape struct impls
 
 impl Sphere {
     pub fn new(center: Point3, radius: f64, material: Material) -> Self {
-        Sphere { center, radius, material}
+        Sphere {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
@@ -68,36 +68,38 @@ impl Hittable for Sphere {
 
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         let oc = r.origin - self.center;
-            let a = r.direction.length_squared();
-            let half_b = r.direction.dot(&oc);
-            let c = oc.length_squared() - self.radius * self.radius;
-            let discriminant: f64 = half_b * half_b - a * c;
+        let a = r.direction.length_squared();
+        let half_b = r.direction.dot(&oc);
+        let c = oc.length_squared() - self.radius * self.radius;
+        let discriminant: f64 = half_b * half_b - a * c;
 
-            if discriminant > 0.0 {
-                let root = discriminant.sqrt();
+        if discriminant > 0.0 {
+            let root = discriminant.sqrt();
 
-                let t = (-half_b - root) / a;
-                if t < t_max && t > t_min {
-                    let intersection_point = r.at(t);
-                    let normal: Vector3 = (intersection_point - self.center) / self.radius;
-                    let intersection = Intersection::new(r, t, intersection_point, normal, self.get_material());
-                    return Some(intersection);
-                }
-
-                let t = (-half_b + root) / a;
-                if t < t_max && t > t_min {
-                    let intersection_point = r.at(t);
-                    let normal: Vector3 = (intersection_point - self.center) / self.radius;
-                    let intersection = Intersection::new(r, t, intersection_point, normal, self.get_material());
-                    return Some(intersection);
-                }
+            let t = (-half_b - root) / a;
+            if t < t_max && t > t_min {
+                let intersection_point = r.at(t);
+                let normal: Vector3 = (intersection_point - self.center) / self.radius;
+                let intersection =
+                    Intersection::new(r, t, intersection_point, normal, self.get_material());
+                return Some(intersection);
             }
 
-            None
+            let t = (-half_b + root) / a;
+            if t < t_max && t > t_min {
+                let intersection_point = r.at(t);
+                let normal: Vector3 = (intersection_point - self.center) / self.radius;
+                let intersection =
+                    Intersection::new(r, t, intersection_point, normal, self.get_material());
+                return Some(intersection);
+            }
+        }
+
+        None
     }
 }
 
-impl Hittable for Shape  {
+impl Hittable for Shape {
     fn get_material(&self) -> &Material {
         match self {
             Shape::Sphere(sphere) => sphere.get_material(),
@@ -111,10 +113,14 @@ impl Hittable for Shape  {
     }
 }
 
-
-
 impl<'a> Intersection<'a> {
-    pub fn new(r: &Ray, t: f64, p: Point3, normal: Vector3, material: &'a Material) -> Intersection<'a> {
+    pub fn new(
+        r: &Ray,
+        t: f64,
+        p: Point3,
+        normal: Vector3,
+        material: &'a Material,
+    ) -> Intersection<'a> {
         // which side of object did ray hit?
         let ray_hit_outer_surface = r.direction.dot(&normal) < 0.0;
         let new_normal = if ray_hit_outer_surface {
@@ -131,8 +137,6 @@ impl<'a> Intersection<'a> {
         }
     }
 }
-
-
 
 pub struct HittableObjects {
     // The HittableObjects list will own its objects, so no lifetime

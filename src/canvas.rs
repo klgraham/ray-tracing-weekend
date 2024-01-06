@@ -29,7 +29,7 @@ impl Resolution {
 
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasConfig {
-    pub resolution: Resolution
+    pub resolution: Resolution,
 }
 
 impl CanvasConfig {

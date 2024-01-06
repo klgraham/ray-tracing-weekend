@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-mod canvas;
 mod camera;
+mod canvas;
 mod color;
 mod geom;
 mod material;
@@ -11,7 +11,7 @@ mod ray;
 mod shapes;
 
 use camera::{Camera, RenderConfig};
-use canvas::{ASPECT_RATIO, Resolution};
+use canvas::{Resolution, ASPECT_RATIO};
 use geom::*;
 
 use shapes::make_random_scene;
@@ -56,12 +56,13 @@ fn main() {
     let path = Path::new(&filename);
     let mut file = File::create(path).expect("Failed to create file.");
 
-    let header = format!("P6\n{} {}\n255\n", render_config.width, render_config.height);
+    let header = format!(
+        "P6\n{} {}\n255\n",
+        render_config.width, render_config.height
+    );
     file.write_all(header.as_bytes())
         .expect("Failed to write PPM header.");
 
     file.write_all(&binary_pixels)
         .expect("Failed to write color map to PPM.");
 }
-
-

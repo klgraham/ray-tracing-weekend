@@ -53,13 +53,41 @@ impl Color {
         Color::new(rng.gen(), rng.gen(), rng.gen())
     }
 
-    pub const RED: Self = Self { red: 1.0, green: 0.0, blue: 0.0 };
-    pub const GREEN: Self = Self { red: 0.0, green: 1.0, blue: 0.0 };
-    pub const BLUE: Self = Self { red: 0.0, green: 0.0, blue: 1.0 };
-    pub const BLACK: Self = Self { red: 0.0, green: 0.0, blue: 0.0 };
-    pub const WHITE: Self = Self { red: 1.0, green: 1.0, blue: 1.0 };
-    pub const CINNABAR: Self = Self { red: 0.73, green: 0.27, blue: 0.21 };
-    pub const DIAMOND: Self = Self { red: 0.78, green: 0.88, blue: 0.91 };
+    pub const RED: Self = Self {
+        red: 1.0,
+        green: 0.0,
+        blue: 0.0,
+    };
+    pub const GREEN: Self = Self {
+        red: 0.0,
+        green: 1.0,
+        blue: 0.0,
+    };
+    pub const BLUE: Self = Self {
+        red: 0.0,
+        green: 0.0,
+        blue: 1.0,
+    };
+    pub const BLACK: Self = Self {
+        red: 0.0,
+        green: 0.0,
+        blue: 0.0,
+    };
+    pub const WHITE: Self = Self {
+        red: 1.0,
+        green: 1.0,
+        blue: 1.0,
+    };
+    pub const CINNABAR: Self = Self {
+        red: 0.73,
+        green: 0.27,
+        blue: 0.21,
+    };
+    pub const DIAMOND: Self = Self {
+        red: 0.78,
+        green: 0.88,
+        blue: 0.91,
+    };
 
     pub fn diffuse_albedo() -> Self {
         Color::random() * Color::random()

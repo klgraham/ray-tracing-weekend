@@ -1,13 +1,12 @@
 use crate::canvas::{CanvasConfig, Resolution};
+use crate::color::Color;
 use crate::geom::{random_in_unit_disk, Point3, Vector3};
 use crate::ray::Ray;
 use crate::shapes::HittableObjects;
-use crate::color::Color;
 
 use pbr::ProgressBar;
 use rand::prelude::*;
 use rayon::prelude::*;
-
 
 #[derive(Copy, Clone, Debug)]
 pub struct RenderConfig {
@@ -28,7 +27,6 @@ impl RenderConfig {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct Camera {
