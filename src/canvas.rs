@@ -1,3 +1,6 @@
+pub const ASPECT_RATIO: f64 = 16.0 / 9.0;
+
+#[derive(Copy, Clone, Debug)]
 pub enum Resolution {
     _240p,
     _360p,
@@ -21,5 +24,24 @@ impl Resolution {
             Resolution::_4K => 2160,
             Resolution::_5K => 2880,
         }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct CanvasConfig {
+    pub resolution: Resolution
+}
+
+impl CanvasConfig {
+    pub fn new(resolution: Resolution) -> Self {
+        CanvasConfig { resolution }
+    }
+
+    pub fn height(self) -> usize {
+        self.resolution.height()
+    }
+
+    pub fn width(self) -> usize {
+        ((self.height() as f64) * ASPECT_RATIO) as usize
     }
 }

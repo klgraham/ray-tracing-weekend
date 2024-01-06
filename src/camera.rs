@@ -1,5 +1,35 @@
+use crate::canvas::{CanvasConfig, Resolution, ASPECT_RATIO};
 use crate::geom::{random_in_unit_disk, Point3, Vector3};
 use crate::ray::Ray;
+use crate::shapes::{HittableObjects};
+use crate::color::Color;
+
+use pbr::ProgressBar;
+use rand::prelude::*;
+use rand::rngs::ThreadRng;
+use rayon::prelude::*;
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct RenderConfig {
+    pub height: usize,
+    pub width: usize,
+    pub samples_per_pixel: usize,
+    pub max_depth: i32,
+}
+
+impl RenderConfig {
+    pub fn new(resolution: Resolution, samples_per_pixel: usize, max_depth: i32) -> Self {
+        let canvas_config = CanvasConfig { resolution };
+        RenderConfig {
+            height: canvas_config.height(),
+            width: canvas_config.width(),
+            samples_per_pixel,
+            max_depth,
+        }
+    }
+}
+
 
 #[derive(Debug)]
 pub struct Camera {
@@ -29,6 +59,23 @@ pub struct Camera {
 
 fn degrees_to_radians(degrees: f64) -> f64 {
     degrees * std::f64::consts::PI / 180.0
+}
+
+fn sample_pixel(
+    i: usize,
+    j: usize,
+    camera: &Camera,
+    objects: &HittableObjects,
+    max_depth: i32,
+    w: f64,
+    h: f64,
+) -> Color {
+    let x = rand::thread_rng().gen::<f64>();
+    let u = ((i as f64) + x) / w;
+    let y = rand::thread_rng().gen::<f64>();
+    let v = ((j as f64) + y) / h;
+    let r = camera.get_ray(u, v);
+    objects.compute_ray_color(r, max_depth)
 }
 
 impl Camera {
@@ -77,5 +124,39 @@ impl Camera {
             + s * self.horizontal
             + t * self.vertical;
         Ray::new(self.origin + offset, direction)
+    }
+
+    pub fn render(&self, objects: &HittableObjects, render_config: RenderConfig) -> Vec<u8> {
+        let width = render_config.width;
+        let height = render_config.height;
+        let samples_per_pixel = render_config.samples_per_pixel;
+        let max_depth = render_config.max_depth;
+        let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
+        let w = (width as f64) - 1.0;
+        let h = (height as f64) - 1.0;
+
+        let mut progress_bar = ProgressBar::new(height as u64);
+
+        // Note that the height coordinate is written backwards
+        // Should be able to parallelize the i and j loops. The sampling loop can't be though.
+        for j in (0..height).rev() {
+            for i in 0..width {
+                let samples: Vec<usize> = (0..samples_per_pixel).collect();
+                let color = samples
+                    .par_iter()
+                    .map(|_| sample_pixel(i, j, self, objects, max_depth, w, h))
+                    .collect::<Vec<Color>>()
+                    .iter()
+                    .sum::<Color>();
+
+                let pixel = color.sample_pixel(samples_per_pixel as u32);
+                binary_pixels.push(pixel.0);
+                binary_pixels.push(pixel.1);
+                binary_pixels.push(pixel.2);
+            }
+            progress_bar.inc();
+        }
+        progress_bar.finish_print("Done.");
+        binary_pixels
     }
 }
