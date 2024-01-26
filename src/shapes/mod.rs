@@ -6,7 +6,9 @@ use rand::prelude::*;
 
 pub trait Hittable {
     fn get_material(&self) -> &Material;
-    /// Returns the intersction between a ray and a shape, if there is one
+    /// Computes the intersection between a ray and a shape at t
+    fn compute_intersection(&self, r: &Ray, t: f64) -> Intersection;
+    /// Returns the intersection between a ray and a shape, if there is one
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
 }
 
@@ -66,6 +68,12 @@ impl Hittable for Sphere {
         &self.material
     }
 
+    fn compute_intersection(&self, r: &Ray, t: f64) -> Intersection {
+        let intersection_point = r.at(t);
+        let normal: Vector3 = (intersection_point - self.center) / self.radius;
+        Intersection::new(r, t, intersection_point, normal, self.get_material())
+    }
+
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
         let oc = r.origin - self.center;
         let a = r.direction.length_squared();
@@ -75,23 +83,13 @@ impl Hittable for Sphere {
 
         if discriminant > 0.0 {
             let root = discriminant.sqrt();
-
             let t = (-half_b - root) / a;
             if t < t_max && t > t_min {
-                let intersection_point = r.at(t);
-                let normal: Vector3 = (intersection_point - self.center) / self.radius;
-                let intersection =
-                    Intersection::new(r, t, intersection_point, normal, self.get_material());
-                return Some(intersection);
+                return Some(self.compute_intersection(r, t));
             }
-
             let t = (-half_b + root) / a;
             if t < t_max && t > t_min {
-                let intersection_point = r.at(t);
-                let normal: Vector3 = (intersection_point - self.center) / self.radius;
-                let intersection =
-                    Intersection::new(r, t, intersection_point, normal, self.get_material());
-                return Some(intersection);
+                return Some(self.compute_intersection(r, t));
             }
         }
 
@@ -103,6 +101,12 @@ impl Hittable for Shape {
     fn get_material(&self) -> &Material {
         match self {
             Shape::Sphere(sphere) => sphere.get_material(),
+        }
+    }
+
+    fn compute_intersection(&self, r: &Ray, t: f64) -> Intersection {
+        match self {
+            Shape::Sphere(sphere) => sphere.compute_intersection(r, t),
         }
     }
 
