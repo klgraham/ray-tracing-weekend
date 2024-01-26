@@ -4,12 +4,39 @@ use crate::material::{select_material, Material};
 use crate::ray::Ray;
 use rand::prelude::*;
 
+pub const INFINITY: f64 = f64::INFINITY;
+
+/// Determines degree of membership in a real-valued
+/// interval with a minimum and a maximum
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub struct Interval {
+    min: f64,
+    max: f64,
+}
+
+impl Interval {
+    pub fn new(min: f64, max: f64) -> Self {
+        Interval { min, max }
+    }
+
+    pub fn contains(&self, x: f64) -> bool {
+        self.min <= x && x <= self.max
+    }
+
+    pub fn surrounds(&self, x: f64) -> bool {
+        self.min < x && x < self.max
+    }
+}
+
+pub const EMPTY_INTERVAL: Interval = Interval{min: INFINITY, max:-INFINITY};
+pub const UNIVERSE: Interval = Interval{min: -INFINITY, max: INFINITY};
+
 pub trait Hittable {
     fn get_material(&self) -> &Material;
     /// Computes the intersection between a ray and a shape at t
     fn compute_intersection(&self, r: &Ray, t: f64) -> Intersection;
     /// Returns the intersection between a ray and a shape, if there is one
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection>;
+    fn hit(&self, r: &Ray, interval: Interval) -> Option<Intersection>;
 }
 
 /// Shape structs
@@ -74,7 +101,7 @@ impl Hittable for Sphere {
         Intersection::new(r, t, intersection_point, normal, self.get_material())
     }
 
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit(&self, r: &Ray, interval: Interval) -> Option<Intersection> {
         let oc = r.origin - self.center;
         let a = r.direction.length_squared();
         let half_b = r.direction.dot(&oc);
@@ -84,11 +111,11 @@ impl Hittable for Sphere {
         if discriminant > 0.0 {
             let root = discriminant.sqrt();
             let t = (-half_b - root) / a;
-            if t < t_max && t > t_min {
+            if interval.surrounds(t) {
                 return Some(self.compute_intersection(r, t));
             }
             let t = (-half_b + root) / a;
-            if t < t_max && t > t_min {
+            if interval.surrounds(t) {
                 return Some(self.compute_intersection(r, t));
             }
         }
@@ -110,9 +137,9 @@ impl Hittable for Shape {
         }
     }
 
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    fn hit(&self, r: &Ray, interval: Interval) -> Option<Intersection> {
         match self {
-            Shape::Sphere(sphere) => sphere.hit(r, t_min, t_max),
+            Shape::Sphere(sphere) => sphere.hit(r, interval),
         }
     }
 }
@@ -164,12 +191,13 @@ impl HittableObjects {
         self.objects.clear();
     }
 
-    pub fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<Intersection> {
+    pub fn hit(&self, r: &Ray, interval: Interval) -> Option<Intersection> {
         let mut closest_intersection: Option<Intersection> = None;
-        let mut closest_hit = t_max;
+        let mut closest_hit = interval.max;
 
         for object in self.objects.iter() {
-            let maybe_intersection = object.hit(r, t_min, t_max);
+            let reduced_interval = Interval::new(interval.min, closest_hit);
+            let maybe_intersection = object.hit(r, reduced_interval);
             if let Some(intersection) = maybe_intersection {
                 if intersection.t < closest_hit {
                     closest_hit = intersection.t;
@@ -186,7 +214,7 @@ impl HittableObjects {
             return Color::BLACK;
         }
 
-        let intersection = self.hit(&r, 1e-3, f64::MAX);
+        let intersection = self.hit(&r, Interval::new(0_f64, INFINITY));
 
         match intersection {
             Some(intersect) => {
