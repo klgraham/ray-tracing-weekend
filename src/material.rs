@@ -18,6 +18,7 @@ pub enum Material {
     Dielectric(f64, Color),
 }
 
+/// Computes reflectivity using Schlick Approximation
 fn dielectric_reflectance(cosine: f64, ref_index: f64) -> f64 {
     let mut r0 = (1.0 - ref_index) / (1.0 + ref_index);
     r0 *= r0;
@@ -28,6 +29,7 @@ impl Material {
     pub fn scatter(&self, incident_ray: Ray, intersect: &Intersection) -> Option<(Ray, &Color)> {
         match self {
             Material::DiffuseNonMetal(albedo) => {
+                // Lambertian Reflection
                 let scatter_direction = intersect.normal + random_unit_vector();
                 let scattered_ray = Ray::new(intersect.p, scatter_direction);
                 Some((scattered_ray, albedo))
@@ -38,6 +40,8 @@ impl Material {
                     .direction
                     .to_unit_vector()
                     .reflect(&intersect.normal);
+
+                // Fuzzy reflection
                 let direction = reflection + (*fuzz) * random_point_in_unit_sphere();
                 let scattered_ray = Ray::new(intersect.p, direction);
 
@@ -49,6 +53,7 @@ impl Material {
             }
 
             Material::Dielectric(index_of_refraction, attenuation) => {
+                // Snell's law
                 let refraction_ratio = if intersect.ray_hit_outer_surface {
                     1.0 / index_of_refraction
                 } else {
@@ -56,7 +61,7 @@ impl Material {
                 };
 
                 let incident_direction = incident_ray.direction.to_unit_vector();
-
+                // Total internal reflection
                 let cos_theta = intersect.normal.dot(&-incident_direction).min(1.0);
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
                 let cannot_refract = refraction_ratio * sin_theta > 1.0;
