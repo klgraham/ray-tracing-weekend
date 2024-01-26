@@ -10,9 +10,13 @@ use rayon::prelude::*;
 
 #[derive(Copy, Clone, Debug)]
 pub struct RenderConfig {
+    // Rendered image height in pixels
     pub height: usize,
+    // Rendered image weight in pixels
     pub width: usize,
+    // Number of random samples for each pixel
     pub samples_per_pixel: usize,
+    // Maximum numbner of times a ray can bounce in the scene
     pub max_depth: i32,
 }
 

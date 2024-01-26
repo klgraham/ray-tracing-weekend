@@ -210,11 +210,12 @@ impl HittableObjects {
 
     pub fn compute_ray_color(&self, r: Ray, depth: i32) -> Color {
         if depth <= 0 {
-            // This gives us an end to the recursion.
+            // If ray has bounced more than allowed number of bounces,
+            // stop collecting light for it
             return Color::BLACK;
         }
 
-        let intersection = self.hit(&r, Interval::new(0_f64, INFINITY));
+        let intersection = self.hit(&r, Interval::new(1e-3_f64, INFINITY));
 
         match intersection {
             Some(intersect) => {
