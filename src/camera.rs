@@ -2,12 +2,13 @@ use crate::canvas::{CanvasConfig, Resolution};
 use crate::color::Color;
 use crate::geom::{random_in_unit_disk, Point3, Vector3};
 use crate::ray::Ray;
-use crate::shapes::HittableObjects;
+use crate::shapes::{HittableObjects, Interval, INFINITY};
 
 use pbr::ProgressBar;
 use rand::prelude::*;
 use rayon::prelude::*;
 
+/// Configuration for the rendered image
 #[derive(Copy, Clone, Debug)]
 pub struct RenderConfig {
     // Rendered image height in pixels
@@ -32,6 +33,9 @@ impl RenderConfig {
     }
 }
 
+/// The `Camera`` struct creates rays and sends them into the scene
+/// with `Hittable`` objects. When a `Ray` hits a shape, `Camera`
+/// uses the info to render an image from its viewpoint.
 #[derive(Debug)]
 pub struct Camera {
     // the eye is at the center of the screen, at z = focal_length
@@ -60,23 +64,6 @@ pub struct Camera {
 
 fn degrees_to_radians(degrees: f64) -> f64 {
     degrees * std::f64::consts::PI / 180.0
-}
-
-fn sample_pixel(
-    i: usize,
-    j: usize,
-    camera: &Camera,
-    objects: &HittableObjects,
-    max_depth: i32,
-    w: f64,
-    h: f64,
-) -> Color {
-    let x = rand::thread_rng().gen::<f64>();
-    let u = ((i as f64) + x) / w;
-    let y = rand::thread_rng().gen::<f64>();
-    let v = ((j as f64) + y) / h;
-    let r = camera.get_ray(u, v);
-    objects.compute_ray_color(r, max_depth)
 }
 
 impl Camera {
@@ -118,7 +105,7 @@ impl Camera {
         }
     }
 
-    pub fn get_ray(&self, s: f64, t: f64) -> Ray {
+    pub fn create_ray(&self, s: f64, t: f64) -> Ray {
         let rd = self.lens_radius * random_in_unit_disk();
         let offset = self.u * rd.x + self.v * rd.y;
         let direction = self.lower_left_corner - self.origin.as_vector() - offset
@@ -127,6 +114,56 @@ impl Camera {
         Ray::new(self.origin + offset, direction)
     }
 
+    pub fn compute_ray_color(&self, r: Ray, objects: &HittableObjects, depth: i32) -> Color {
+        if depth <= 0 {
+            // If ray has bounced more than allowed number of bounces,
+            // stop collecting light for it
+            return Color::BLACK;
+        }
+
+        let intersection = objects.hit(&r, Interval::new(1e-3_f64, INFINITY));
+
+        match intersection {
+            Some(intersect) => {
+                let intersection_material = intersect.material;
+                let ray_and_color = intersection_material.scatter(r, &intersect);
+
+                match ray_and_color {
+                    Some((scattered_ray, attenuation)) => {
+                        attenuation.mult(self.compute_ray_color(scattered_ray, objects, depth - 1))
+                    }
+                    None => Color::BLACK,
+                }
+            }
+            None => {
+                let ray_direction = r.direction.to_unit_vector();
+                // y is [-1,1], so t is [0,1]
+                let t = 0.5 * (ray_direction.y + 1.0);
+                // linear interpolation between while and a light blue, based on y-component of ray
+                // blendedValue = (1−t)*startValue + t * endValue
+                (1.0 - t) * Color::WHITE + t * Color::new(0.5, 0.7, 1.0)
+            }
+        }
+    }
+
+    pub fn sample_pixel(
+        &self,
+        i: usize,
+        j: usize,
+        objects: &HittableObjects,
+        max_depth: i32,
+        w: f64,
+        h: f64,
+    ) -> Color {
+        let x = rand::thread_rng().gen::<f64>();
+        let y = rand::thread_rng().gen::<f64>();
+        let u = ((i as f64) + x) / w;
+        let v = ((j as f64) + y) / h;
+        let r = self.create_ray(u, v);
+        self.compute_ray_color(r, objects, max_depth)
+    }
+
+    /// Renders the scene. Returns a Vec of pixels (bytes).
     pub fn render(&self, objects: &HittableObjects, render_config: RenderConfig) -> Vec<u8> {
         let width = render_config.width;
         let height = render_config.height;
@@ -145,7 +182,7 @@ impl Camera {
                 let samples: Vec<usize> = (0..samples_per_pixel).collect();
                 let color = samples
                     .par_iter()
-                    .map(|_| sample_pixel(i, j, self, objects, max_depth, w, h))
+                    .map(|_| self.sample_pixel(i, j, objects, max_depth, w, h))
                     .collect::<Vec<Color>>()
                     .iter()
                     .sum::<Color>();

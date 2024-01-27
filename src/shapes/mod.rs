@@ -28,8 +28,14 @@ impl Interval {
     }
 }
 
-pub const EMPTY_INTERVAL: Interval = Interval{min: INFINITY, max:-INFINITY};
-pub const UNIVERSE: Interval = Interval{min: -INFINITY, max: INFINITY};
+pub const EMPTY_INTERVAL: Interval = Interval {
+    min: INFINITY,
+    max: -INFINITY,
+};
+pub const UNIVERSE: Interval = Interval {
+    min: -INFINITY,
+    max: INFINITY,
+};
 
 pub trait Hittable {
     fn get_material(&self) -> &Material;
