@@ -4,7 +4,7 @@ use crate::geom::{random_in_unit_disk, Point3, Vector3};
 use crate::ray::Ray;
 use crate::shapes::{HittableObjects, Interval, INFINITY};
 
-use pbr::ProgressBar;
+use indicatif::ProgressBar;
 use rand::prelude::*;
 use rayon::prelude::*;
 
@@ -169,32 +169,38 @@ impl Camera {
         let height = render_config.height;
         let samples_per_pixel = render_config.samples_per_pixel;
         let max_depth = render_config.max_depth;
-        let mut binary_pixels: Vec<u8> = Vec::with_capacity(width * height);
         let w = (width as f64) - 1.0;
         let h = (height as f64) - 1.0;
 
-        let mut progress_bar = ProgressBar::new(height as u64);
+        let progress_bar = ProgressBar::new(height as u64);
 
         // Note that the height coordinate is written backwards
         // Should be able to parallelize the i and j loops. The sampling loop can't be though.
-        for j in (0..height).rev() {
-            for i in 0..width {
-                let samples: Vec<usize> = (0..samples_per_pixel).collect();
-                let color = samples
-                    .par_iter()
-                    .map(|_| self.sample_pixel(i, j, objects, max_depth, w, h))
-                    .collect::<Vec<Color>>()
-                    .iter()
-                    .sum::<Color>();
+        let rows: Vec<Vec<u8>> = (0..height)
+            .rev()
+            .collect::<Vec<_>>()
+            .into_par_iter()
+            .map(|j| {
+                let mut row_pixels: Vec<u8> = Vec::with_capacity(width * 3);
+                for i in 0..width {
+                    let samples: Vec<usize> = (0..samples_per_pixel).collect();
+                    let color = samples
+                        .par_iter()
+                        .map(|_| self.sample_pixel(i, j, objects, max_depth, w, h))
+                        .collect::<Vec<Color>>()
+                        .iter()
+                        .sum::<Color>();
 
-                let pixel = color.sample_pixel(samples_per_pixel as u32);
-                binary_pixels.push(pixel.0);
-                binary_pixels.push(pixel.1);
-                binary_pixels.push(pixel.2);
-            }
-            progress_bar.inc();
-        }
-        progress_bar.finish_print("Done.");
+                    let pixel = color.sample_pixel(samples_per_pixel as u32);
+                    row_pixels.push(pixel.0);
+                    row_pixels.push(pixel.1);
+                    row_pixels.push(pixel.2);
+                }
+                progress_bar.inc(1);
+                row_pixels
+            }).collect();
+        progress_bar.finish_with_message("Done.");
+        let binary_pixels: Vec<u8> = rows.into_iter().flatten().collect();
         binary_pixels
     }
 }

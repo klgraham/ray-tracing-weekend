@@ -23,7 +23,7 @@ use shapes::make_random_scene;
 /// can be denoted with two offset vectors `u` and `v`.
 
 fn main() {
-    let resolution = Resolution::_240p;
+    let resolution = Resolution::_4K;
     let samples_per_pixel: usize = 500;
     let max_depth: i32 = 50;
     let render_config = RenderConfig::new(resolution, samples_per_pixel, max_depth);
